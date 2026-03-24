@@ -1,0 +1,26 @@
+{
+  "name": "Poker Box Tracker",
+  "short_name": "PokerBox",
+  "description": "Multi-box poker machine tracker with Google Sheet sync",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a1a0f",
+  "theme_color": "#0a1a0f",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "finance"],
+  "screenshots": []
+}

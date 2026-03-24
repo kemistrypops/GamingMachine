@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PokerBox">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a1a0f">
+<meta name="description" content="Multi-box poker machine tracker with Google Sheet sync">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<title>Poker Box Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --felt: #0a1a0f; --felt-mid: #0f2416; --felt-light: #163320;
+    --gold: #c8a84b; --gold-light: #e2c97e; --gold-dim: #7a6228;
+    --green-neon: #00ff88; --red-chip: #d63031; --red-dim: #7a1a1a;
+    --blue: #4da6ff; --white: #f0ece0; --muted: #8a9e8f;
+    --card-bg: rgba(255,255,255,0.04); --card-border: rgba(200,168,75,0.2);
+    --radius: 16px; --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--felt); color: var(--white); font-family: 'DM Sans', sans-serif; min-height: 100vh; overscroll-behavior: none; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: repeating-linear-gradient(45deg,rgba(0,0,0,.03) 0px,rgba(0,0,0,.03) 1px,transparent 1px,transparent 4px); pointer-events: none; z-index: 0; }
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 0 110px; }
+
+  /* ── INSTALL BANNER ── */
+  #install-banner {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+    background: linear-gradient(135deg, #0f2416, #091510);
+    border-bottom: 1px solid var(--gold);
+    padding: 12px 16px;
+    align-items: center; gap: 12px;
+    max-width: 480px; margin: 0 auto;
+    animation: slideDown .3s ease;
+  }
+  #install-banner.visible { display: flex; }
+  @keyframes slideDown { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
+  .install-icon { font-size: 24px; flex-shrink: 0; }
+  .install-text { flex: 1; }
+  .install-text strong { font-size: 13px; color: var(--gold-light); display: block; }
+  .install-text span { font-size: 11px; color: var(--muted); }
+  .install-btn { background: linear-gradient(135deg,#c8a84b,#e2c97e); color: #0a1a0f; border: none; border-radius: 20px; padding: 8px 16px; font-size: 12px; font-weight: 700; letter-spacing: 1px; cursor: pointer; white-space: nowrap; }
+  .install-dismiss { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 4px; line-height: 1; }
+
+  /* ── iOS INSTALL HINT ── */
+  #ios-hint {
+    display: none;
+    position: fixed; bottom: 80px; left: 16px; right: 16px; z-index: 300;
+    max-width: 448px; margin: 0 auto;
+    background: #111e14;
+    border: 1px solid var(--gold);
+    border-radius: var(--radius);
+    padding: 16px;
+    animation: fadeUp .3s ease;
+  }
+  #ios-hint.visible { display: block; }
+  @keyframes fadeUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .ios-hint-row { display: flex; align-items: flex-start; gap: 10px; }
+  .ios-hint-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .ios-hint-text strong { font-size: 13px; color: var(--gold-light); display: block; margin-bottom: 4px; }
+  .ios-hint-text span { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .ios-hint-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; position: absolute; top: 12px; right: 14px; }
+
+  /* ── TRANSFER BADGE (in Sync tab) ── */
+  .transfer-card {
+    background: linear-gradient(135deg, rgba(200,168,75,.08), rgba(200,168,75,.03));
+    border: 1px solid var(--gold);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .transfer-card h3 { font-family:'Playfair Display',serif; font-size:16px; color:var(--gold-light); margin-bottom:6px; }
+  .transfer-card p  { font-size:12px; color:var(--muted); margin-bottom:14px; line-height:1.6; }
+  .transfer-steps { list-style:none; padding:0; }
+  .transfer-steps li { font-size:12px; color:var(--muted); padding:7px 0 7px 28px; border-bottom:1px solid rgba(255,255,255,.04); position:relative; line-height:1.5; }
+  .transfer-steps li:last-child { border:none; }
+  .transfer-steps li::before { content:attr(data-n); position:absolute; left:0; top:7px; width:20px; height:20px; background:var(--gold-dim); border-radius:50%; font-size:10px; font-weight:700; color:var(--felt); line-height:20px; text-align:center; }
+  .transfer-steps li strong { color:var(--gold-light); }
+  .qr-wrap { display:flex; align-items:center; justify-content:center; gap:16px; margin:14px 0; flex-wrap:wrap; }
+  .qr-placeholder { width:90px; height:90px; background:rgba(255,255,255,.06); border:1px solid var(--card-border); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:30px; }
+  .export-import-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* ── OFFLINE NOTICE ── */
+  #offline-notice {
+    display: none;
+    background: var(--red-dim);
+    color: #ffcccc;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 6px;
+  }
+  body.offline #offline-notice { display: block; }
+
+  /* HEADER */
+  .header { background: linear-gradient(180deg,#091510 0%,var(--felt) 100%); padding: 44px 20px 16px; text-align: center; border-bottom: 1px solid var(--card-border); position: relative; }
+  .header::after { content:''; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%); width:60px; height:2px; background:var(--gold); border-radius:2px; }
+  .header-suit { font-size:12px; letter-spacing:8px; color:var(--gold-dim); margin-bottom:6px; }
+  .header h1 { font-family:'Playfair Display',serif; font-size:28px; font-weight:900; color:var(--gold-light); line-height:1; }
+  .header-sub { font-size:10px; color:var(--muted); margin-top:4px; letter-spacing:2px; text-transform:uppercase; }
+
+  /* BOX SELECTOR BAR */
+  .box-bar { background:var(--felt-mid); border-bottom:1px solid var(--card-border); padding:10px 16px; display:flex; align-items:center; gap:10px; }
+  .box-select-wrap { flex:1; position:relative; }
+  .box-select-wrap::after { content:'▾'; position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--gold-dim); font-size:12px; pointer-events:none; }
+  select#box-select { width:100%; background:rgba(0,0,0,.3); border:1px solid var(--card-border); border-radius:var(--radius-sm); padding:10px 32px 10px 12px; color:var(--gold-light); font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; outline:none; -webkit-appearance:none; appearance:none; }
+  .icon-bar-btn { width:38px; height:38px; min-width:38px; border-radius:var(--radius-sm); border:1px solid var(--card-border); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; transition:background .2s; }
+  .icon-bar-btn.add { background:rgba(200,168,75,.1); color:var(--gold); font-size:22px; }
+  .icon-bar-btn.add:active { background:rgba(200,168,75,.25); }
+  .icon-bar-btn.manage { background:transparent; color:var(--muted); font-size:16px; }
+  .icon-bar-btn.manage:active { background:rgba(255,255,255,.05); color:var(--gold); }
+
+  /* SYNC BAR */
+  .sync-bar { display:flex; align-items:center; justify-content:space-between; background:rgba(0,0,0,.2); border-bottom:1px solid rgba(200,168,75,.08); padding:7px 16px; font-size:11px; }
+  .sync-dot { width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:6px; background:var(--muted); transition:background .4s; flex-shrink:0; }
+  .sync-dot.connected { background:var(--green-neon); box-shadow:0 0 6px var(--green-neon); }
+  .sync-dot.syncing   { background:var(--gold); animation:pulse 1s infinite; }
+  .sync-dot.error     { background:var(--red-chip); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .sync-status-text { color:var(--muted); flex:1; }
+  .sync-now-btn { background:none; border:1px solid var(--card-border); color:var(--gold-dim); font-size:10px; letter-spacing:1px; padding:4px 10px; border-radius:20px; cursor:pointer; text-transform:uppercase; font-family:'DM Sans',sans-serif; }
+  .sync-now-btn:active { background:rgba(200,168,75,.1); color:var(--gold); }
+
+  /* TABS */
+  .tabs { display:flex; background:var(--felt-mid); border-bottom:1px solid var(--card-border); position:sticky; top:0; z-index:10; }
+  .tab { flex:1; padding:13px 6px; text-align:center; font-size:10px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
+  .tab.active { color:var(--gold-light); border-bottom-color:var(--gold); }
+
+  /* SECTIONS */
+  .section { display:none; padding:20px; }
+  .section.active { display:block; }
+
+  /* SUMMARY CARDS */
+  .summary-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .summary-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:var(--radius); padding:16px; text-align:center; position:relative; overflow:hidden; }
+  .summary-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+  .summary-card.profit::before   { background:var(--green-neon); }
+  .summary-card.weeks::before    { background:var(--gold); }
+  .summary-card.total-in::before { background:var(--blue); }
+  .summary-card.total-out::before{ background:var(--red-chip); }
+  .summary-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .summary-value { font-family:'DM Mono',monospace; font-size:22px; font-weight:500; line-height:1; }
+  .summary-value.green { color:var(--green-neon); }
+  .summary-value.gold  { color:var(--gold-light); }
+  .summary-value.blue  { color:var(--blue); }
+  .summary-value.red   { color:var(--red-chip); }
+  .summary-value.loss  { color:var(--red-chip); }
+
+  /* ALL BOXES SUMMARY */
+  .all-boxes-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:var(--radius); padding:16px; margin-bottom:12px; }
+  .all-boxes-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gold-dim); margin-bottom:12px; }
+  .box-summary-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+  .box-summary-row:last-child { border:none; }
+  .box-summary-left { display:flex; align-items:center; gap:10px; }
+  .box-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .box-summary-name { font-size:13px; color:var(--white); }
+  .box-summary-weeks { font-size:10px; color:var(--muted); margin-top:1px; }
+  .box-summary-profit { font-family:'DM Mono',monospace; font-size:15px; font-weight:500; }
+
+  /* FORM */
+  .form-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:var(--radius); padding:20px; margin-bottom:20px; }
+  .form-title { font-family:'Playfair Display',serif; font-size:18px; color:var(--gold-light); margin-bottom:4px; }
+  .form-subtitle { font-size:11px; color:var(--muted); margin-bottom:20px; line-height:1.5; }
+  .field-group { margin-bottom:16px; }
+  .field-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; display:block; }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .field-sub { font-size:9px; color:var(--gold-dim); margin-bottom:4px; letter-spacing:1px; text-transform:uppercase; }
+  input[type="number"],input[type="text"],input[type="date"],textarea { width:100%; background:rgba(0,0,0,.3); border:1px solid rgba(200,168,75,.25); border-radius:var(--radius-sm); padding:12px 14px; color:var(--white); font-family:'DM Mono',monospace; font-size:16px; outline:none; transition:border-color .2s,box-shadow .2s; -webkit-appearance:none; appearance:none; }
+  input:focus,textarea:focus { border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,.15); }
+  input::placeholder,textarea::placeholder { color:var(--muted); opacity:.5; }
+  input[readonly] { background:rgba(200,168,75,.06); border-color:rgba(200,168,75,.3); color:var(--gold-light); cursor:default; }
+  input[readonly]:focus { box-shadow:none; border-color:rgba(200,168,75,.3); }
+  textarea { resize:none; font-size:12px; line-height:1.5; }
+
+  /* PREVIEW */
+  .preview-box { background:rgba(0,0,0,.25); border:1px solid rgba(200,168,75,.15); border-radius:var(--radius-sm); padding:14px; margin:16px 0; display:none; }
+  .preview-box.show { display:block; }
+  .preview-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; }
+  .preview-row+.preview-row { border-top:1px solid rgba(255,255,255,.05); }
+  .preview-key { font-size:11px; color:var(--muted); letter-spacing:1px; }
+  .preview-val { font-family:'DM Mono',monospace; font-size:14px; }
+  .preview-divider { border:none; border-top:1px solid rgba(200,168,75,.2); margin:8px 0; }
+  .preview-profit { display:flex; justify-content:space-between; align-items:center; padding-top:8px; }
+  .preview-profit-label { font-size:12px; font-weight:500; color:var(--gold); letter-spacing:1px; text-transform:uppercase; }
+  .preview-profit-val { font-family:'DM Mono',monospace; font-size:18px; font-weight:500; }
+
+  /* BUTTONS */
+  .btn { display:block; width:100%; padding:16px; border:none; border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .2s; }
+  .btn-primary { background:linear-gradient(135deg,#c8a84b,#e2c97e); color:#0a1a0f; }
+  .btn-primary:active { opacity:.85; transform:scale(.98); }
+  .btn-secondary { background:transparent; color:var(--gold); border:1px solid var(--gold-dim); font-size:12px; padding:13px; }
+  .btn-secondary:active { background:rgba(200,168,75,.1); }
+  .btn-danger { background:transparent; color:var(--red-chip); border:1px solid var(--red-dim); font-size:11px; padding:10px; margin-top:8px; }
+  .btn-danger:active { background:rgba(214,48,49,.1); }
+  .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* CHART */
+  .chart-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:var(--radius); padding:16px; margin-bottom:20px; }
+  .chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .chart-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gold-dim); }
+  .chart-legend { display:flex; align-items:center; gap:8px; font-size:10px; color:var(--muted); }
+  .legend-dot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+  .chart-wrap { overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }
+  .chart-wrap canvas { display:block; }
+  .chart-scroll-hint { text-align:center; font-size:9px; color:var(--gold-dim); letter-spacing:1px; margin-top:8px; opacity:.6; }
+
+  /* HISTORY */
+  .history-list { display:flex; flex-direction:column; gap:12px; }
+  .history-empty { text-align:center; padding:60px 20px; color:var(--muted); }
+  .history-empty-icon { font-size:40px; margin-bottom:12px; opacity:.4; }
+  .history-empty p { font-size:13px; }
+
+  /* WEEK CARD */
+  .week-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:var(--radius); overflow:hidden; position:relative; }
+  .week-card-header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(0,0,0,.2); border-bottom:1px solid rgba(200,168,75,.1); }
+  .week-badge { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gold-dim); }
+  .week-date { font-family:'DM Mono',monospace; font-size:12px; color:var(--muted); }
+  .week-body { padding:14px 16px; }
+  .week-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px; }
+  .week-stat { text-align:center; padding:8px 4px; background:rgba(0,0,0,.15); border-radius:8px; }
+  .week-stat-label { font-size:8px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .week-stat-val { font-family:'DM Mono',monospace; font-size:14px; font-weight:500; }
+  .week-profit-row { display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid rgba(255,255,255,.05); }
+  .week-profit-label { font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+  .week-profit-val { font-family:'DM Mono',monospace; font-size:20px; font-weight:500; }
+  .pos { color:var(--green-neon); } .neg { color:var(--red-chip); } .neu { color:var(--muted); }
+  .delete-btn { position:absolute; top:9px; right:14px; background:none; border:none; color:var(--red-dim); font-size:16px; cursor:pointer; padding:4px; line-height:1; opacity:.6; }
+  .delete-btn:active { opacity:1; }
+  .meter-readings { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
+  .meter-cell { background:rgba(0,0,0,.2); border-radius:8px; padding:8px 10px; }
+  .meter-cell-label { font-size:8px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold-dim); margin-bottom:2px; }
+  .meter-cell-val { font-family:'DM Mono',monospace; font-size:13px; color:var(--muted); }
+
+  /* SYNC TAB */
+  .sync-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
+  .sync-card h3 { font-family:'Playfair Display',serif; font-size:16px; color:var(--gold-light); margin-bottom:6px; }
+  .sync-card p { font-size:12px; color:var(--muted); margin-bottom:14px; line-height:1.6; }
+  .sync-connected-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(0,255,136,.08); border:1px solid rgba(0,255,136,.25); border-radius:20px; padding:5px 12px; font-size:11px; color:var(--green-neon); letter-spacing:1px; margin-bottom:14px; }
+  .url-display { background:rgba(0,0,0,.35); border:1px solid rgba(0,255,136,.2); border-radius:8px; padding:10px 12px; font-family:'DM Mono',monospace; font-size:11px; color:var(--green-neon); word-break:break-all; margin:10px 0; }
+  .last-sync-row { display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--muted); margin-top:10px; }
+  .step-list { counter-reset:steps; list-style:none; }
+  .step-list li { counter-increment:steps; position:relative; padding:10px 10px 10px 36px; font-size:12px; color:var(--muted); border-bottom:1px solid rgba(255,255,255,.04); line-height:1.5; }
+  .step-list li:last-child { border:none; }
+  .step-list li::before { content:counter(steps); position:absolute; left:0; top:10px; width:22px; height:22px; background:var(--gold-dim); border-radius:50%; font-size:10px; font-weight:700; color:var(--felt); line-height:22px; text-align:center; }
+  .step-list li strong { color:var(--gold-light); }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:100; display:none; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
+  .modal-overlay.show { display:flex; }
+  .modal { background:#111e14; border:1px solid var(--card-border); border-radius:20px 20px 0 0; width:100%; max-width:480px; padding:24px 20px 40px; max-height:85vh; overflow-y:auto; animation:slideUp .25s ease; }
+  @keyframes slideUp { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-handle { width:40px; height:4px; background:var(--gold-dim); border-radius:4px; margin:0 auto 20px; }
+  .modal-title { font-family:'Playfair Display',serif; font-size:20px; color:var(--gold-light); margin-bottom:20px; }
+
+  /* BOX LIST */
+  .box-list { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .box-item { display:flex; align-items:center; gap:12px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:var(--radius-sm); padding:14px 16px; transition:border-color .2s; cursor:pointer; }
+  .box-item.active-box { border-color:var(--gold); background:rgba(200,168,75,.07); }
+  .box-color-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .box-info { flex:1; min-width:0; }
+  .box-name-text { font-size:15px; font-weight:500; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .box-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+  .box-actions { display:flex; gap:8px; }
+  .icon-btn { background:none; border:none; cursor:pointer; padding:6px; border-radius:6px; line-height:1; font-size:15px; }
+  .icon-btn:active { background:rgba(255,255,255,.08); }
+
+  /* COLOR PICKER */
+  #color-picker { display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
+  .color-swatch { width:28px; height:28px; border-radius:50%; cursor:pointer; border:3px solid transparent; box-sizing:border-box; transition:border-color .15s,transform .15s; }
+  .color-swatch.selected { border-color:#fff; transform:scale(1.15); }
+
+  /* SUIT DIVIDER */
+  .suit-divider { display:flex; align-items:center; gap:10px; margin:16px 0; color:var(--gold-dim); font-size:14px; }
+  .suit-divider::before,.suit-divider::after { content:''; flex:1; height:1px; background:var(--card-border); }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); padding:10px 20px; border-radius:50px; opacity:0; transition:all .3s; white-space:nowrap; z-index:200; pointer-events:none; font-size:12px; font-weight:500; letter-spacing:1px; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.success { background:var(--gold); color:#0a1a0f; }
+  .toast.error   { background:var(--red-chip); color:#fff; }
+  .toast.info    { background:var(--blue); color:#fff; }
+
+  ::-webkit-scrollbar { width:3px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--gold-dim); border-radius:2px; }
+</style>
+</head>
+<body>
+
+<!-- OFFLINE NOTICE -->
+<div id="offline-notice">⚠ OFFLINE — data saved locally, sync when back online</div>
+
+<!-- INSTALL BANNER (Android/Desktop) -->
+<div id="install-banner" class="install-banner">
+  <div class="install-icon">♠</div>
+  <div class="install-text">
+    <strong>Install Poker Box Tracker</strong>
+    <span>Add to home screen for offline use</span>
+  </div>
+  <button class="install-btn" onclick="installPWA()">Install</button>
+  <button class="install-dismiss" onclick="dismissInstall()">✕</button>
+</div>
+
+<!-- iOS INSTALL HINT -->
+<div id="ios-hint">
+  <button class="ios-hint-close" onclick="document.getElementById('ios-hint').classList.remove('visible')">✕</button>
+  <div class="ios-hint-row">
+    <div class="ios-hint-icon">📲</div>
+    <div class="ios-hint-text">
+      <strong>Install on iPhone / iPad</strong>
+      <span>Tap the <strong style="color:var(--gold-light)">Share</strong> button (↑) at the bottom of Safari, then choose <strong style="color:var(--gold-light)">"Add to Home Screen"</strong></span>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-suit">♠ ♥ ♦ ♣</div>
+    <h1>Poker Box Tracker</h1>
+    <div class="header-sub">Multi-Box Edition</div>
+  </div>
+
+  <!-- BOX SELECTOR -->
+  <div class="box-bar">
+    <div class="box-select-wrap">
+      <select id="box-select" onchange="switchBox(this.value)"></select>
+    </div>
+    <button class="icon-bar-btn add" onclick="openAddBoxModal()" title="Add box">+</button>
+    <button class="icon-bar-btn manage" onclick="openManageModal()" title="Manage boxes">⚙</button>
+  </div>
+
+  <!-- SYNC STATUS -->
+  <div class="sync-bar">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span class="sync-status-text" id="sync-status-text">No sheet connected</span>
+    <button class="sync-now-btn" onclick="manualSync()">Sync</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('dashboard')">Dashboard</div>
+    <div class="tab" onclick="switchTab('entry')">New Entry</div>
+    <div class="tab" onclick="switchTab('history')">History</div>
+    <div class="tab" onclick="switchTab('sync')">Sync</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="section active">
+    <div class="summary-row">
+      <div class="summary-card profit">
+        <div class="summary-label">Box Profit</div>
+        <div id="stat-profit" class="summary-value green">$0</div>
+      </div>
+      <div class="summary-card weeks">
+        <div class="summary-label">Weeks Logged</div>
+        <div id="stat-weeks" class="summary-value gold">0</div>
+      </div>
+    </div>
+    <div class="summary-row">
+      <div class="summary-card total-in">
+        <div class="summary-label">Total In</div>
+        <div id="stat-in" class="summary-value blue">$0</div>
+      </div>
+      <div class="summary-card total-out">
+        <div class="summary-label">Total Out</div>
+        <div id="stat-out" class="summary-value red">$0</div>
+      </div>
+    </div>
+
+    <div class="all-boxes-card" id="all-boxes-card" style="display:none;">
+      <div class="all-boxes-title">♠ All Boxes</div>
+      <div id="all-boxes-list"></div>
+      <div style="border-top:1px solid rgba(200,168,75,.2);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Combined Profit</span>
+        <span id="all-total-profit" style="font-family:'DM Mono',monospace;font-size:18px;" class="pos">$0</span>
+      </div>
+    </div>
+
+    <div class="suit-divider">♦ Last Entry ♦</div>
+    <div id="last-entry-wrap"></div>
+    <div id="no-entries" style="text-align:center;padding:30px;color:var(--muted);font-size:13px;display:none;">
+      No entries yet — tap <strong style="color:var(--gold)">New Entry</strong> to begin.
+    </div>
+  </div>
+
+  <!-- NEW ENTRY -->
+  <div id="tab-entry" class="section">
+    <div class="form-card">
+      <div class="form-title" id="entry-form-title">Record Week</div>
+      <div class="form-subtitle">Last week's readings are pre-filled — just enter this week's figures</div>
+      <div class="field-group">
+        <span class="field-label">📅 Week Ending Date</span>
+        <input type="date" id="entry-date">
+      </div>
+      <div class="field-group">
+        <span class="field-label">📥 Meter IN</span>
+        <div class="field-row">
+          <div><div class="field-sub">Last Week 🔒</div><input type="number" id="in-last" placeholder="—" readonly></div>
+          <div><div class="field-sub">This Week</div><input type="number" id="in-this" placeholder="Enter reading" oninput="calcPreview()"></div>
+        </div>
+      </div>
+      <div class="field-group">
+        <span class="field-label">📤 Meter OUT</span>
+        <div class="field-row">
+          <div><div class="field-sub">Last Week 🔒</div><input type="number" id="out-last" placeholder="—" readonly></div>
+          <div><div class="field-sub">This Week</div><input type="number" id="out-this" placeholder="Enter reading" oninput="calcPreview()"></div>
+        </div>
+      </div>
+      <div id="preview" class="preview-box">
+        <div class="preview-row"><span class="preview-key">Money In</span><span id="prev-in" class="preview-val" style="color:var(--blue)">$0</span></div>
+        <div class="preview-row"><span class="preview-key">Money Out</span><span id="prev-out" class="preview-val" style="color:var(--red-chip)">$0</span></div>
+        <hr class="preview-divider">
+        <div class="preview-profit"><span class="preview-profit-label">Week Profit</span><span id="prev-profit" class="preview-profit-val">$0</span></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveEntry()">Save This Week</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="tab-history" class="section">
+    <div id="chart-card" class="chart-card" style="display:none;">
+      <div class="chart-header">
+        <span class="chart-title">Weekly Performance</span>
+        <div class="chart-legend">
+          <span class="legend-dot" style="background:var(--blue)"></span><span>In</span>
+          <span class="legend-dot" style="background:var(--red-chip)"></span><span>Out</span>
+          <span class="legend-dot" style="background:var(--green-neon)"></span><span>Profit</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="perf-chart"></canvas>
+      </div>
+      <div id="chart-scroll-hint" class="chart-scroll-hint">← scroll to see more →</div>
+    </div>
+    <div id="history-list" class="history-list"></div>
+    <div id="clear-all-wrap" style="display:none;margin-top:16px;">
+      <button class="btn btn-danger" onclick="confirmClearAll()">Clear All Local Data for This Box</button>
+    </div>
+  </div>
+
+  <!-- SYNC -->
+  <div id="tab-sync" class="section">
+
+    <!-- PHONE TRANSFER CARD -->
+    <div class="transfer-card">
+      <h3>📱 Transfer to New Phone</h3>
+      <p>Moving phones? Use one of these methods to bring all your data across.</p>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dim);margin-bottom:8px;">Option A — Google Sheet Sync</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6;">
+          If you have a Sheet connected below, just open this app on the new phone, connect the same Sheet URL, and tap <strong style="color:var(--gold-light)">⬇ Pull All</strong> — all your boxes and entries will appear.
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dim);margin-bottom:8px;">Option B — Export / Import JSON</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6;">No Sheet? Export your data as a file, share it to your new phone, then import it.</div>
+        <div class="export-import-row">
+          <button class="btn btn-secondary" onclick="exportData()" style="padding:12px;font-size:11px;">⬇ Export Data</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()" style="padding:12px;font-size:11px;">⬆ Import Data</button>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      </div>
+    </div>
+
+    <!-- Connected -->
+    <div id="sync-connected-section" style="display:none;">
+      <div class="sync-card">
+        <h3>☁️ Google Sheet Connected</h3>
+        <p style="margin-bottom:8px;">All boxes sync to this one sheet. Each box has its own rows, labelled by box name.</p>
+        <div class="sync-connected-badge">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--green-neon);display:inline-block;box-shadow:0 0 6px var(--green-neon)"></span>
+          Active
+        </div>
+        <div class="url-display" id="connected-url-display"></div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="pullFromSheet()">⬇ Pull All</button>
+          <button class="btn btn-secondary" onclick="pushAllToSheet()">⬆ Push All</button>
+        </div>
+        <div class="last-sync-row">
+          <span>Last synced</span>
+          <span id="last-sync-time" style="font-family:'DM Mono',monospace;">Never</span>
+        </div>
+        <button class="btn btn-danger" onclick="disconnectSheet()">Disconnect Sheet</button>
+      </div>
+      <div class="sync-card">
+        <h3>Box Multipliers</h3>
+        <p>Each box can have its own multiplier.</p>
+        <div id="multiplier-list"></div>
+      </div>
+    </div>
+
+    <!-- Not connected -->
+    <div id="sync-setup-section">
+      <div class="sync-card">
+        <h3>☁️ Connect Google Sheet</h3>
+        <p>One sheet holds data for all your boxes. Each row is tagged with the box name so you can filter in the sheet.</p>
+        <ol class="step-list">
+          <li>Go to <strong>drive.google.com</strong> → create a new <strong>Google Sheet</strong>.</li>
+          <li>Click <strong>Extensions → Apps Script</strong>.</li>
+          <li>Delete the default code, paste in the <strong>google-apps-script-v2.js</strong> file contents.</li>
+          <li>Click <strong>Save</strong>, then <strong>Deploy → New deployment</strong>.</li>
+          <li>Type = <strong>Web App</strong> · Execute as = <strong>Me</strong> · Access = <strong>Anyone</strong> → Deploy.</li>
+          <li>Copy the <strong>Web App URL</strong> and paste it below.</li>
+        </ol>
+      </div>
+      <div class="sync-card">
+        <h3>Paste Your Script URL</h3>
+        <textarea id="script-url-input" rows="3" placeholder="https://script.google.com/macros/s/..."></textarea>
+        <button class="btn btn-primary" onclick="connectSheet()" style="margin-top:12px;">Connect & Test</button>
+      </div>
+    </div>
+
+  </div>
+</div><!-- .app -->
+
+<!-- ADD/EDIT BOX MODAL -->
+<div class="modal-overlay" id="box-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">New Poker Box</div>
+    <div class="field-group">
+      <span class="field-label">Box Name</span>
+      <input type="text" id="modal-box-name" placeholder="e.g. Box 1, Downtown, Shop A">
+    </div>
+    <div class="field-group">
+      <span class="field-label">Color Label</span>
+      <div id="color-picker"></div>
+    </div>
+    <div class="field-group">
+      <span class="field-label">Multiplier ($ per meter unit)</span>
+      <input type="number" id="modal-multiplier" value="50" min="1">
+    </div>
+    <button class="btn btn-primary" id="modal-save-btn" onclick="saveBoxModal()">Add Box</button>
+    <button class="btn btn-danger" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- MANAGE BOXES MODAL -->
+<div class="modal-overlay" id="manage-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Manage Boxes</div>
+    <div id="manage-box-list" class="box-list"></div>
+    <button class="btn btn-secondary" onclick="closeManageModal();openAddBoxModal();">+ Add Another Box</button>
+    <button class="btn btn-danger" onclick="closeManageModal()">Close</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ─── PWA: SERVICE WORKER REGISTRATION ─────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registered', reg.scope))
+      .catch(err => console.warn('SW failed:', err));
+  });
+}
+
+// ─── PWA: INSTALL PROMPT ──────────────────────────────────
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  // Only show if not already installed
+  if (!window.matchMedia('(display-mode: standalone)').matches) {
+    document.getElementById('install-banner').classList.add('visible');
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').classList.remove('visible');
+  toast('App installed! ♠', 'success');
+  deferredInstallPrompt = null;
+});
+
+function installPWA() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(choice => {
+    if (choice.outcome === 'accepted') toast('Installing…', 'info');
+    deferredInstallPrompt = null;
+    document.getElementById('install-banner').classList.remove('visible');
+  });
+}
+
+function dismissInstall() {
+  document.getElementById('install-banner').classList.remove('visible');
+  sessionStorage.setItem('installDismissed', '1');
+}
+
+// ─── PWA: iOS INSTALL HINT ────────────────────────────────
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+}
+function isInStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (isIOS() && !isInStandaloneMode() && !sessionStorage.getItem('iosHintDismissed')) {
+    setTimeout(() => {
+      document.getElementById('ios-hint').classList.add('visible');
+      document.querySelector('.ios-hint-close').addEventListener('click', () => {
+        sessionStorage.setItem('iosHintDismissed', '1');
+      });
+    }, 2000);
+  }
+});
+
+// ─── PWA: OFFLINE DETECTION ───────────────────────────────
+function updateOnlineStatus() {
+  document.body.classList.toggle('offline', !navigator.onLine);
+  if (!navigator.onLine) {
+    setSyncState('error', 'Offline — sync paused');
+  } else if (scriptUrl) {
+    setSyncState('connected', 'Back online');
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// ─── EXPORT / IMPORT (for phone transfer) ─────────────────
+function exportData() {
+  const payload = {
+    version: 'v4',
+    exportedAt: new Date().toISOString(),
+    scriptUrl: scriptUrl || '',
+    boxes: boxes
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'poker-box-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Exported ✓', 'success');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const payload = JSON.parse(e.target.result);
+      if (!payload.boxes || !Array.isArray(payload.boxes)) throw new Error('Invalid file');
+      if (!confirm(`Import ${payload.boxes.length} box(es) from ${payload.exportedAt?.slice(0,10) || 'backup'}?\n\nThis will MERGE with your existing data.`)) return;
+
+      // Merge: add boxes not present locally, merge entries
+      payload.boxes.forEach(importedBox => {
+        let local = getBox(importedBox.id);
+        if (!local) {
+          boxes.push(importedBox);
+        } else {
+          const existIds = new Set(local.entries.map(e => e.id));
+          const newEntries = (importedBox.entries || []).filter(e => !existIds.has(e.id));
+          local.entries = [...local.entries, ...newEntries];
+          local.entries.sort((a,b) => new Date(b.date)-new Date(a.date)||b.id-a.id);
+        }
+      });
+
+      if (payload.scriptUrl && !scriptUrl) {
+        scriptUrl = payload.scriptUrl;
+      }
+
+      persist();
+      renderBoxSelector();
+      renderAll();
+      updateSyncUI();
+      toast('Imported ✓ — ' + payload.boxes.length + ' box(es)', 'success');
+    } catch(err) {
+      toast('Import failed: ' + err.message, 'error');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ─── CONSTANTS ─────────────────────────────────────────────
+const BOX_COLORS = ['#c8a84b','#00ff88','#4da6ff','#d63031','#bf7fff','#ff9f43','#fd79a8','#00cec9'];
+
+// ─── STATE ─────────────────────────────────────────────────
+let boxes        = [];
+let activeBoxId  = null;
+let scriptUrl    = '';
+let lastSync     = null;
+let modalEditId  = null;
+let selectedColor = BOX_COLORS[0];
+
+// ─── HELPERS ───────────────────────────────────────────────
+const getBox    = id => boxes.find(b => b.id === id);
+const activeBox = ()  => getBox(activeBoxId);
+
+// ─── INIT ──────────────────────────────────────────────────
+function init() {
+  const saved = localStorage.getItem('pokerBoxesV4');
+  if (saved) boxes = JSON.parse(saved);
+  if (boxes.length === 0) boxes.push(newBoxObj('Box 1', BOX_COLORS[0], 50));
+
+  activeBoxId = localStorage.getItem('pokerActiveBoxId') || boxes[0].id;
+  if (!getBox(activeBoxId)) activeBoxId = boxes[0].id;
+
+  scriptUrl = localStorage.getItem('pokerScriptUrl') || '';
+  const sl  = localStorage.getItem('pokerLastSync');
+  if (sl) lastSync = new Date(sl);
+
+  document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+
+  renderBoxSelector();
+  renderAll();
+  updateSyncUI();
+  prefillLastWeek();
+  updateOnlineStatus();
+
+  if (scriptUrl) setTimeout(() => pullFromSheet(true), 800);
+}
+
+function newBoxObj(name, color, multiplier) {
+  return { id: 'box_' + Date.now() + '_' + Math.random().toString(36).slice(2,6), name, color, multiplier: multiplier || 50, entries: [] };
+}
+
+// ─── PERSIST ───────────────────────────────────────────────
+function persist() {
+  localStorage.setItem('pokerBoxesV4', JSON.stringify(boxes));
+  localStorage.setItem('pokerActiveBoxId', activeBoxId);
+  if (scriptUrl) localStorage.setItem('pokerScriptUrl', scriptUrl);
+  if (lastSync)  localStorage.setItem('pokerLastSync', lastSync.toISOString());
+}
+
+// ─── BOX SELECTOR ──────────────────────────────────────────
+function renderBoxSelector() {
+  const sel = document.getElementById('box-select');
+  sel.innerHTML = boxes.map(b =>
+    `<option value="${b.id}" ${b.id === activeBoxId ? 'selected' : ''}>${b.name}</option>`
+  ).join('');
+}
+
+function switchBox(id) {
+  activeBoxId = id;
+  persist();
+  renderAll();
+  prefillLastWeek();
+  updateEntryTitle();
+  toast('Switched to ' + activeBox().name, 'info');
+}
+
+function updateEntryTitle() {
+  const box = activeBox();
+  document.getElementById('entry-form-title').textContent = 'Record Week — ' + (box?.name || '');
+}
+
+// ─── FORMULA ───────────────────────────────────────────────
+function calc(inLast, inThis, outLast, outThis, mult) {
+  const moneyIn  = (inThis  - inLast)  * mult;
+  const moneyOut = (outThis - outLast) * mult;
+  return { moneyIn, moneyOut, profit: moneyIn - moneyOut };
+}
+
+// ─── PREVIEW ───────────────────────────────────────────────
+function calcPreview() {
+  const inLast  = parseFloat(document.getElementById('in-last').value)  || 0;
+  const inThis  = parseFloat(document.getElementById('in-this').value)  || 0;
+  const outLast = parseFloat(document.getElementById('out-last').value) || 0;
+  const outThis = parseFloat(document.getElementById('out-this').value) || 0;
+  const hasData = inThis || outThis;
+  document.getElementById('preview').classList.toggle('show', !!hasData);
+  if (!hasData) return;
+  const mult = activeBox()?.multiplier || 50;
+  const { moneyIn, moneyOut, profit } = calc(inLast, inThis, outLast, outThis, mult);
+  document.getElementById('prev-in').textContent  = fmt(moneyIn);
+  document.getElementById('prev-out').textContent = fmt(moneyOut);
+  const pp = document.getElementById('prev-profit');
+  pp.textContent = fmt(profit);
+  pp.className   = 'preview-profit-val ' + (profit > 0 ? 'pos' : profit < 0 ? 'neg' : 'neu');
+}
+
+// ─── AUTOFILL LAST WEEK ────────────────────────────────────
+function prefillLastWeek() {
+  const box   = activeBox();
+  const inEl  = document.getElementById('in-last');
+  const outEl = document.getElementById('out-last');
+  if (box?.entries?.length > 0) {
+    const prev = box.entries[0];
+    inEl.value  = prev.inThis;
+    outEl.value = prev.outThis;
+  } else {
+    inEl.value  = '';
+    outEl.value = '';
+  }
+  calcPreview();
+}
+
+// ─── SAVE ENTRY ────────────────────────────────────────────
+function saveEntry() {
+  const box = activeBox(); if (!box) return;
+  const date    = document.getElementById('entry-date').value;
+  const inLast  = parseFloat(document.getElementById('in-last').value);
+  const inThis  = parseFloat(document.getElementById('in-this').value);
+  const outLast = parseFloat(document.getElementById('out-last').value);
+  const outThis = parseFloat(document.getElementById('out-this').value);
+
+  if (!date) { toast('Select a date', 'error'); return; }
+  if (isNaN(inThis) || isNaN(outThis)) { toast('Enter this week\'s readings', 'error'); return; }
+  if (isNaN(inLast) || isNaN(outLast)) { toast('Last week readings missing — enter manually for first entry', 'error'); return; }
+
+  const { moneyIn, moneyOut, profit } = calc(inLast, inThis, outLast, outThis, box.multiplier);
+  const entry = { id: Date.now(), date, inLast, inThis, outLast, outThis, moneyIn, moneyOut, profit, multiplier: box.multiplier, boxId: box.id, boxName: box.name };
+
+  box.entries.unshift(entry);
+  persist();
+  clearForm();
+  renderAll();
+  toast('Saved for ' + box.name, 'success');
+  switchTab('dashboard');
+
+  if (scriptUrl && navigator.onLine) setTimeout(() => syncSingleEntry(entry), 400);
+}
+
+function clearForm() {
+  document.getElementById('in-this').value  = '';
+  document.getElementById('out-this').value = '';
+  document.getElementById('preview').classList.remove('show');
+  document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+  prefillLastWeek();
+}
+
+// ─── DELETE ENTRY ──────────────────────────────────────────
+function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  const box = activeBox();
+  box.entries = box.entries.filter(e => e.id !== id);
+  persist();
+  renderAll();
+  prefillLastWeek();
+  toast('Deleted', 'info');
+  if (scriptUrl && navigator.onLine) setTimeout(() => syncBoxToSheet(box, true), 400);
+}
+
+function confirmClearAll() {
+  const box = activeBox();
+  if (!confirm('Delete ALL entries for ' + box.name + '?')) return;
+  box.entries = [];
+  persist();
+  renderAll();
+  prefillLastWeek();
+  toast('Cleared', 'info');
+  if (scriptUrl && navigator.onLine) setTimeout(() => syncBoxToSheet(box, true), 400);
+}
+
+// ─── ADD / EDIT BOX MODAL ──────────────────────────────────
+function openAddBoxModal() {
+  modalEditId    = null;
+  selectedColor  = BOX_COLORS[boxes.length % BOX_COLORS.length];
+  document.getElementById('modal-title').textContent    = 'New Poker Box';
+  document.getElementById('modal-save-btn').textContent = 'Add Box';
+  document.getElementById('modal-box-name').value       = '';
+  document.getElementById('modal-multiplier').value     = '50';
+  buildColorPicker();
+  document.getElementById('box-modal').classList.add('show');
+}
+
+function openEditBoxModal(id) {
+  const box = getBox(id); if (!box) return;
+  modalEditId   = id;
+  selectedColor = box.color;
+  document.getElementById('modal-title').textContent    = 'Edit Box';
+  document.getElementById('modal-save-btn').textContent = 'Save Changes';
+  document.getElementById('modal-box-name').value       = box.name;
+  document.getElementById('modal-multiplier').value     = box.multiplier;
+  buildColorPicker();
+  closeManageModal();
+  document.getElementById('box-modal').classList.add('show');
+}
+
+function buildColorPicker() {
+  document.getElementById('color-picker').innerHTML = BOX_COLORS.map(c =>
+    `<div class="color-swatch ${c === selectedColor ? 'selected' : ''}" style="background:${c}" onclick="pickColor('${c}')"></div>`
+  ).join('');
+}
+
+function pickColor(c) { selectedColor = c; buildColorPicker(); }
+function closeModal() { document.getElementById('box-modal').classList.remove('show'); }
+
+function saveBoxModal() {
+  const name = document.getElementById('modal-box-name').value.trim();
+  const mult = parseFloat(document.getElementById('modal-multiplier').value) || 50;
+  if (!name) { toast('Enter a box name', 'error'); return; }
+
+  if (modalEditId) {
+    const box = getBox(modalEditId);
+    box.name  = name; box.color = selectedColor; box.multiplier = mult;
+  } else {
+    const nb = newBoxObj(name, selectedColor, mult);
+    boxes.push(nb);
+    activeBoxId = nb.id;
+  }
+
+  persist();
+  renderBoxSelector();
+  renderAll();
+  updateSyncUI();
+  prefillLastWeek();
+  updateEntryTitle();
+  closeModal();
+  toast(modalEditId ? 'Box updated' : name + ' added!', 'success');
+}
+
+// ─── MANAGE MODAL ──────────────────────────────────────────
+function openManageModal() { renderManageList(); document.getElementById('manage-modal').classList.add('show'); }
+function closeManageModal() { document.getElementById('manage-modal').classList.remove('show'); }
+
+function renderManageList() {
+  document.getElementById('manage-box-list').innerHTML = boxes.map(b => `
+    <div class="box-item ${b.id === activeBoxId ? 'active-box' : ''}" onclick="selectBoxFromManage('${b.id}')">
+      <div class="box-color-dot" style="background:${b.color}"></div>
+      <div class="box-info">
+        <div class="box-name-text">${b.name}</div>
+        <div class="box-meta">${b.entries.length} wk${b.entries.length!==1?'s':''} · ×${b.multiplier}</div>
+      </div>
+      <div class="box-actions">
+        <button class="icon-btn" onclick="event.stopPropagation();openEditBoxModal('${b.id}')">✏️</button>
+        ${boxes.length > 1 ? `<button class="icon-btn" onclick="event.stopPropagation();confirmDeleteBox('${b.id}')">🗑</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function selectBoxFromManage(id) {
+  closeManageModal();
+  activeBoxId = id;
+  document.getElementById('box-select').value = id;
+  renderAll(); prefillLastWeek(); updateEntryTitle();
+  persist();
+  toast('Switched to ' + activeBox().name, 'info');
+}
+
+function confirmDeleteBox(id) {
+  const box = getBox(id); if (!box) return;
+  if (!confirm(`Delete "${box.name}" and all its data?`)) return;
+  boxes = boxes.filter(b => b.id !== id);
+  if (activeBoxId === id) activeBoxId = boxes[0].id;
+  persist();
+  renderBoxSelector(); renderManageList(); renderAll(); prefillLastWeek(); updateSyncUI(); updateEntryTitle();
+  toast(box.name + ' deleted', 'info');
+}
+
+// ─── SYNC — SHARED SHEET ───────────────────────────────────
+async function connectSheet() {
+  const url = document.getElementById('script-url-input').value.trim();
+  if (!url.startsWith('https://script.google.com')) { toast('Invalid URL', 'error'); return; }
+  setSyncState('syncing', 'Testing…');
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.success === undefined) throw new Error('Bad response');
+    scriptUrl = url;
+    persist();
+    toast('Connected! Syncing…', 'success');
+    updateSyncUI();
+    await pushAllToSheet();
+  } catch(e) {
+    setSyncState('error', 'Connection failed');
+    toast('Could not connect. Check URL.', 'error');
+  }
+}
+
+function disconnectSheet() {
+  if (!confirm('Disconnect the Google Sheet from all boxes?')) return;
+  scriptUrl = '';
+  localStorage.removeItem('pokerScriptUrl');
+  updateSyncUI();
+  toast('Disconnected', 'info');
+}
+
+async function pullFromSheet(silent = false) {
+  if (!scriptUrl) return;
+  if (!navigator.onLine) { if (!silent) toast('Offline — cannot pull', 'error'); return; }
+  setSyncState('syncing', 'Pulling all boxes…');
+  try {
+    const res  = await fetch(scriptUrl + '?ts=' + Date.now());
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    const byBox = {};
+    (data.entries || []).forEach(e => {
+      const bid = e.boxId;
+      if (!byBox[bid]) byBox[bid] = { name: e.boxName, entries: [] };
+      byBox[bid].entries.push({
+        id: Number(e.id), date: String(e.date),
+        inLast: Number(e.inLast), inThis: Number(e.inThis),
+        outLast: Number(e.outLast), outThis: Number(e.outThis),
+        moneyIn: Number(e.moneyIn), moneyOut: Number(e.moneyOut),
+        profit: Number(e.profit), multiplier: Number(e.multiplier),
+        boxId: bid, boxName: e.boxName
+      });
+    });
+
+    Object.entries(byBox).forEach(([bid, sheetBox]) => {
+      let localBox = getBox(bid);
+      if (!localBox) {
+        localBox = newBoxObj(sheetBox.name, BOX_COLORS[boxes.length % BOX_COLORS.length], 50);
+        localBox.id = bid;
+        boxes.push(localBox);
+      }
+      const sheetIds  = new Set(sheetBox.entries.map(e => e.id));
+      const localOnly = localBox.entries.filter(e => !sheetIds.has(e.id));
+      localBox.entries = [...sheetBox.entries, ...localOnly];
+      localBox.entries.sort((a,b) => new Date(b.date)-new Date(a.date)||b.id-a.id);
+    });
+
+    lastSync = new Date();
+    persist();
+    renderBoxSelector();
+    renderAll();
+    prefillLastWeek();
+    setSyncState('connected', 'Synced · all boxes');
+    updateLastSyncTime();
+    if (!silent) toast('Pulled all boxes ✓', 'success');
+  } catch(e) {
+    setSyncState('error', 'Pull failed');
+    if (!silent) toast('Pull failed', 'error');
+  }
+}
+
+async function pushAllToSheet(silent = false) {
+  if (!scriptUrl) return;
+  if (!navigator.onLine) { if (!silent) toast('Offline — cannot push', 'error'); return; }
+  setSyncState('syncing', 'Pushing all boxes…');
+  try {
+    const payload = boxes.map(b => ({ id: b.id, name: b.name, entries: b.entries }));
+    const res  = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'syncAll', boxes: payload }) });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    lastSync = new Date();
+    persist();
+    setSyncState('connected', 'Synced · all boxes');
+    updateLastSyncTime();
+    if (!silent) toast('All boxes pushed ✓', 'success');
+  } catch(e) {
+    setSyncState('error', 'Push failed');
+    if (!silent) toast('Push failed', 'error');
+  }
+}
+
+async function syncBoxToSheet(box, silent = false) {
+  if (!scriptUrl || !box || !navigator.onLine) return;
+  setSyncState('syncing', 'Syncing ' + box.name + '…');
+  try {
+    const res  = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'syncBox', boxId: box.id, boxName: box.name, entries: box.entries }) });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    lastSync = new Date(); persist();
+    setSyncState('connected', 'Synced');
+    updateLastSyncTime();
+    if (!silent) toast(box.name + ' synced ✓', 'success');
+  } catch(e) {
+    setSyncState('error', 'Sync failed');
+  }
+}
+
+async function syncSingleEntry(entry) {
+  if (!scriptUrl || !navigator.onLine) return;
+  try {
+    await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'add', entry }) });
+    lastSync = new Date(); persist();
+    setSyncState('connected', 'Synced');
+    updateLastSyncTime();
+  } catch(e) { setSyncState('error', 'Auto-sync failed'); }
+}
+
+async function manualSync() {
+  if (!scriptUrl) { switchTab('sync'); toast('Connect a sheet first', 'info'); return; }
+  await pullFromSheet();
+}
+
+// ─── SYNC UI ───────────────────────────────────────────────
+function setSyncState(state, label) {
+  document.getElementById('sync-dot').className   = 'sync-dot' + (state==='connected'?' connected':state==='syncing'?' syncing':state==='error'?' error':'');
+  document.getElementById('sync-status-text').textContent = label;
+}
+
+function updateLastSyncTime() {
+  const el = document.getElementById('last-sync-time');
+  if (el && lastSync) el.textContent = lastSync.toLocaleTimeString();
+}
+
+function updateSyncUI() {
+  const cs = document.getElementById('sync-connected-section');
+  const ss = document.getElementById('sync-setup-section');
+  if (scriptUrl) {
+    cs.style.display = 'block'; ss.style.display = 'none';
+    document.getElementById('connected-url-display').textContent = scriptUrl;
+    updateLastSyncTime();
+    setSyncState('connected', 'Connected · all boxes');
+    renderMultiplierList();
+  } else {
+    cs.style.display = 'none'; ss.style.display = 'block';
+    setSyncState('', 'No sheet connected');
+  }
+}
+
+function renderMultiplierList() {
+  document.getElementById('multiplier-list').innerHTML = boxes.map(b => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+      <div style="width:8px;height:8px;border-radius:50%;background:${b.color};flex-shrink:0;"></div>
+      <span style="flex:1;font-size:13px;">${b.name}</span>
+      <input type="number" value="${b.multiplier}" min="1" style="width:70px;text-align:center;padding:8px;font-size:15px;" onchange="setBoxMultiplier('${b.id}',this.value)">
+    </div>`).join('');
+}
+
+function setBoxMultiplier(id, v) {
+  const box = getBox(id); if (!box) return;
+  box.multiplier = parseFloat(v) || 50;
+  persist();
+  toast(box.name + ' multiplier set to ×' + box.multiplier, 'success');
+}
+
+// ─── RENDER ────────────────────────────────────────────────
+function renderAll() { renderDashboard(); renderHistory(); updateEntryTitle(); }
+
+function renderDashboard() {
+  const box     = activeBox();
+  const entries = box?.entries || [];
+  const totalIn     = entries.reduce((s,e)=>s+e.moneyIn,0);
+  const totalOut    = entries.reduce((s,e)=>s+e.moneyOut,0);
+  const totalProfit = entries.reduce((s,e)=>s+e.profit,0);
+  document.getElementById('stat-profit').textContent = fmt(totalProfit);
+  document.getElementById('stat-profit').className   = 'summary-value '+(totalProfit>=0?'green':'loss');
+  document.getElementById('stat-weeks').textContent  = entries.length;
+  document.getElementById('stat-in').textContent     = fmt(totalIn);
+  document.getElementById('stat-out').textContent    = fmt(totalOut);
+
+  const allCard = document.getElementById('all-boxes-card');
+  if (boxes.length > 1) {
+    allCard.style.display = 'block';
+    let grandProfit = 0;
+    document.getElementById('all-boxes-list').innerHTML = boxes.map(b => {
+      const p = b.entries.reduce((s,e)=>s+e.profit,0);
+      grandProfit += p;
+      return `<div class="box-summary-row">
+        <div class="box-summary-left">
+          <div class="box-dot" style="background:${b.color}"></div>
+          <div><div class="box-summary-name">${b.name}</div><div class="box-summary-weeks">${b.entries.length} week${b.entries.length!==1?'s':''}</div></div>
+        </div>
+        <div class="box-summary-profit ${p>=0?'pos':'neg'}">${fmt(p)}</div>
+      </div>`;
+    }).join('');
+    const gp = document.getElementById('all-total-profit');
+    gp.textContent = fmt(grandProfit);
+    gp.className   = grandProfit>=0?'pos':'neg';
+  } else {
+    allCard.style.display = 'none';
+  }
+
+  const lw = document.getElementById('last-entry-wrap');
+  const ne = document.getElementById('no-entries');
+  if (entries.length===0) { lw.innerHTML=''; ne.style.display='block'; }
+  else { ne.style.display='none'; lw.innerHTML=weekCardHTML(entries[0],false); }
+}
+
+function renderHistory() {
+  const box     = activeBox();
+  const entries = box?.entries || [];
+  const list    = document.getElementById('history-list');
+  const cw      = document.getElementById('clear-all-wrap');
+  const chartCard = document.getElementById('chart-card');
+
+  if (entries.length === 0) {
+    list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">🃏</div><p>No entries for ${box?.name||'this box'}.</p></div>`;
+    cw.style.display='none';
+    chartCard.style.display='none';
+    return;
+  }
+
+  cw.style.display='block';
+  chartCard.style.display='block';
+  list.innerHTML = entries.map(e => weekCardHTML(e,true)).join('');
+  renderChart(entries);
+}
+
+function renderChart(entries) {
+  const data    = [...entries].reverse();
+  const canvas  = document.getElementById('perf-chart');
+  const dpr     = window.devicePixelRatio || 1;
+  const BAR_W   = 28;
+  const GAP     = 14;
+  const GROUP   = BAR_W * 2 + GAP;
+  const PADDING = { top: 24, right: 20, bottom: 48, left: 52 };
+  const chartH  = 180;
+  const n       = data.length;
+  const chartW  = Math.max(300, n * (GROUP + 20) + PADDING.left + PADDING.right);
+
+  canvas.style.width  = chartW + 'px';
+  canvas.style.height = chartH + 'px';
+  canvas.width  = chartW * dpr;
+  canvas.height = chartH * dpr;
+
+  document.getElementById('chart-scroll-hint').style.display =
+    (chartW > (canvas.parentElement.offsetWidth || 300)) ? 'block' : 'none';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, chartW, chartH);
+
+  const plotH = chartH - PADDING.top - PADDING.bottom;
+
+  const allVals = data.flatMap(e => [e.moneyIn, e.moneyOut, Math.abs(e.profit)]);
+  const maxVal  = Math.max(...allVals, 1);
+  const minProfit = Math.min(...data.map(e => e.profit), 0);
+  const fullRange = maxVal - minProfit;
+
+  const zeroY = PADDING.top + plotH * (maxVal / fullRange);
+
+  ctx.strokeStyle = 'rgba(200,168,75,0.08)';
+  ctx.lineWidth   = 1;
+  const gridCount = 4;
+  for (let i = 0; i <= gridCount; i++) {
+    const y = PADDING.top + (plotH / gridCount) * i;
+    ctx.beginPath(); ctx.moveTo(PADDING.left, y); ctx.lineTo(chartW - PADDING.right, y); ctx.stroke();
+  }
+
+  if (minProfit < 0) {
+    ctx.strokeStyle = 'rgba(200,168,75,0.3)';
+    ctx.lineWidth   = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(PADDING.left, zeroY); ctx.lineTo(chartW - PADDING.right, zeroY); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.fillStyle  = 'rgba(138,158,143,0.8)';
+  ctx.font       = `${10 * dpr / dpr}px DM Mono, monospace`;
+  ctx.textAlign  = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= gridCount; i++) {
+    const val = maxVal - (fullRange / gridCount) * i;
+    const y   = PADDING.top + (plotH / gridCount) * i;
+    ctx.fillText(fmtShort(val), PADDING.left - 6, y);
+  }
+
+  const profitPoints = [];
+
+  data.forEach((e, i) => {
+    const groupX = PADDING.left + i * (GROUP + 20) + 10;
+
+    const inH  = (e.moneyIn  / fullRange) * plotH;
+    const inY  = zeroY - inH;
+    ctx.fillStyle = 'rgba(77,166,255,0.75)';
+    roundRect(ctx, groupX, inY, BAR_W, inH, 4);
+    ctx.fill();
+
+    const outH = (e.moneyOut / fullRange) * plotH;
+    const outY = zeroY - outH;
+    ctx.fillStyle = 'rgba(214,48,49,0.75)';
+    roundRect(ctx, groupX + BAR_W + 4, outY, BAR_W, outH, 4);
+    ctx.fill();
+
+    const cx = groupX + BAR_W + 2;
+    const cy = zeroY - (e.profit / fullRange) * plotH;
+    profitPoints.push({ cx, cy, profit: e.profit });
+
+    ctx.fillStyle    = 'rgba(138,158,143,0.7)';
+    ctx.font         = '9px DM Sans, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    const d = new Date(e.date + 'T00:00:00');
+    const label = (d.getMonth()+1) + '/' + d.getDate();
+    ctx.fillText(label, groupX + BAR_W + 2, chartH - PADDING.bottom + 6);
+
+    ctx.fillStyle = 'rgba(122,98,40,0.7)';
+    ctx.font      = '8px DM Sans, sans-serif';
+    ctx.fillText('Wk' + weekNum(e.date), groupX + BAR_W + 2, chartH - PADDING.bottom + 18);
+  });
+
+  if (profitPoints.length > 1) {
+    ctx.strokeStyle = 'rgba(0,255,136,0.9)';
+    ctx.lineWidth   = 2;
+    ctx.lineJoin    = 'round';
+    ctx.beginPath();
+    profitPoints.forEach((p, i) => {
+      i === 0 ? ctx.moveTo(p.cx, p.cy) : ctx.lineTo(p.cx, p.cy);
+    });
+    ctx.stroke();
+  }
+
+  profitPoints.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.cx, p.cy, 4, 0, Math.PI * 2);
+    ctx.fillStyle   = p.profit >= 0 ? '#00ff88' : '#d63031';
+    ctx.strokeStyle = '#0a1a0f';
+    ctx.lineWidth   = 1.5;
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle    = p.profit >= 0 ? 'rgba(0,255,136,0.9)' : 'rgba(214,48,49,0.9)';
+    ctx.font         = 'bold 9px DM Mono, monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = p.profit >= 0 ? 'bottom' : 'top';
+    ctx.fillText(fmtShort(p.profit), p.cx, p.profit >= 0 ? p.cy - 6 : p.cy + 6);
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  if (h < 0) { y += h; h = -h; }
+  if (h < r * 2) r = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function fmtShort(n) {
+  const a = Math.abs(n);
+  const s = a >= 1000 ? (a/1000).toFixed(1).replace(/\.0$/,'') + 'k' : String(Math.round(a));
+  return (n < 0 ? '-' : '') + '$' + s;
+}
+
+function weekCardHTML(e, showDelete) {
+  const pc  = e.profit>0?'pos':e.profit<0?'neg':'neu';
+  const del = showDelete?`<button class="delete-btn" onclick="deleteEntry(${e.id})">✕</button>`:'';
+  return `<div class="week-card">${del}
+    <div class="week-card-header">
+      <span class="week-badge">Wk ${weekNum(e.date)}</span>
+      <span class="week-date">${fmtDate(e.date)}</span>
+    </div>
+    <div class="week-body">
+      <div class="meter-readings">
+        <div class="meter-cell"><div class="meter-cell-label">IN — Last</div><div class="meter-cell-val">${e.inLast.toLocaleString()}</div></div>
+        <div class="meter-cell"><div class="meter-cell-label">IN — This</div><div class="meter-cell-val">${e.inThis.toLocaleString()}</div></div>
+        <div class="meter-cell"><div class="meter-cell-label">OUT — Last</div><div class="meter-cell-val">${e.outLast.toLocaleString()}</div></div>
+        <div class="meter-cell"><div class="meter-cell-label">OUT — This</div><div class="meter-cell-val">${e.outThis.toLocaleString()}</div></div>
+      </div>
+      <div class="week-stats">
+        <div class="week-stat"><div class="week-stat-label">Money In</div><div class="week-stat-val" style="color:var(--blue)">${fmt(e.moneyIn)}</div></div>
+        <div class="week-stat"><div class="week-stat-label">Money Out</div><div class="week-stat-val" style="color:var(--red-chip)">${fmt(e.moneyOut)}</div></div>
+        <div class="week-stat"><div class="week-stat-label">× Rate</div><div class="week-stat-val" style="color:var(--muted)">×${e.multiplier}</div></div>
+      </div>
+      <div class="week-profit-row">
+        <span class="week-profit-label">Week Profit</span>
+        <span class="week-profit-val ${pc}">${fmt(e.profit)}</span>
+      </div>
+    </div></div>`;
+}
+
+// ─── TABS ──────────────────────────────────────────────────
+function switchTab(name) {
+  const names = ['dashboard','entry','history','sync'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id==='tab-'+name));
+  if (name==='entry') prefillLastWeek();
+  if (name==='sync')  { updateSyncUI(); }
+  if (name==='history') {
+    const box = activeBox();
+    if (box?.entries?.length > 0) setTimeout(() => renderChart(box.entries), 50);
+  }
+}
+
+// ─── TOAST ─────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ─── UTILS ─────────────────────────────────────────────────
+function fmt(n){const a=Math.abs(n);return(n<0?'-':'')+'$'+a.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function fmtDate(s){if(!s)return'';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
+function weekNum(s){const d=new Date(s+'T00:00:00');const st=new Date(d.getFullYear(),0,1);return Math.ceil(((d-st)/86400000+st.getDay()+1)/7);}
+
+document.getElementById('box-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('manage-modal').addEventListener('click',function(e){if(e.target===this)closeManageModal();});
+
+init();
+</script>
+</body>
+</html>
