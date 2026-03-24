@@ -67,7 +67,7 @@
   .ios-hint-text span { font-size: 12px; color: var(--muted); line-height: 1.5; }
   .ios-hint-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; position: absolute; top: 12px; right: 14px; }
 
-  /* ── TRANSFER BADGE (in Sync tab) ── */
+  /* ── TRANSFER BADGE ── */
   .transfer-card {
     background: linear-gradient(135deg, rgba(200,168,75,.08), rgba(200,168,75,.03));
     border: 1px solid var(--gold);
@@ -82,8 +82,6 @@
   .transfer-steps li:last-child { border:none; }
   .transfer-steps li::before { content:attr(data-n); position:absolute; left:0; top:7px; width:20px; height:20px; background:var(--gold-dim); border-radius:50%; font-size:10px; font-weight:700; color:var(--felt); line-height:20px; text-align:center; }
   .transfer-steps li strong { color:var(--gold-light); }
-  .qr-wrap { display:flex; align-items:center; justify-content:center; gap:16px; margin:14px 0; flex-wrap:wrap; }
-  .qr-placeholder { width:90px; height:90px; background:rgba(255,255,255,.06); border:1px solid var(--card-border); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:30px; }
   .export-import-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
   /* ── OFFLINE NOTICE ── */
@@ -170,13 +168,18 @@
   .field-group { margin-bottom:16px; }
   .field-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; display:block; }
   .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .field-sub { font-size:9px; color:var(--gold-dim); margin-bottom:4px; letter-spacing:1px; text-transform:uppercase; }
+  .field-sub { font-size:9px; color:var(--gold-dim); margin-bottom:4px; letter-spacing:1px; text-transform:uppercase; display:flex; align-items:center; gap:5px; }
   input[type="number"],input[type="text"],input[type="date"],textarea { width:100%; background:rgba(0,0,0,.3); border:1px solid rgba(200,168,75,.25); border-radius:var(--radius-sm); padding:12px 14px; color:var(--white); font-family:'DM Mono',monospace; font-size:16px; outline:none; transition:border-color .2s,box-shadow .2s; -webkit-appearance:none; appearance:none; }
   input:focus,textarea:focus { border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,.15); }
   input::placeholder,textarea::placeholder { color:var(--muted); opacity:.5; }
   input[readonly] { background:rgba(200,168,75,.06); border-color:rgba(200,168,75,.3); color:var(--gold-light); cursor:default; }
   input[readonly]:focus { box-shadow:none; border-color:rgba(200,168,75,.3); }
   textarea { resize:none; font-size:12px; line-height:1.5; }
+
+  /* UNLOCK BUTTON */
+  .unlock-btn { font-size:8px; padding:2px 7px; border-radius:10px; border:1px solid var(--gold-dim); background:none; color:var(--gold-dim); cursor:pointer; letter-spacing:1px; text-transform:uppercase; white-space:nowrap; line-height:1.6; transition:all .2s; flex-shrink:0; }
+  .unlock-btn.active { border-color:var(--green-neon); color:var(--green-neon); background:rgba(0,255,136,.06); }
+  .unlock-btn:active { opacity:.7; }
 
   /* PREVIEW */
   .preview-box { background:rgba(0,0,0,.25); border:1px solid rgba(200,168,75,.15); border-radius:var(--radius-sm); padding:14px; margin:16px 0; display:none; }
@@ -230,12 +233,25 @@
   .week-profit-label { font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
   .week-profit-val { font-family:'DM Mono',monospace; font-size:20px; font-weight:500; }
   .pos { color:var(--green-neon); } .neg { color:var(--red-chip); } .neu { color:var(--muted); }
-  .delete-btn { position:absolute; top:9px; right:14px; background:none; border:none; color:var(--red-dim); font-size:16px; cursor:pointer; padding:4px; line-height:1; opacity:.6; }
+  .delete-btn { background:none; border:none; color:var(--red-dim); font-size:15px; cursor:pointer; padding:4px 6px; line-height:1; opacity:.65; transition:opacity .15s; }
   .delete-btn:active { opacity:1; }
+  .edit-btn { background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; padding:4px 6px; line-height:1; opacity:.65; transition:opacity .15s; }
+  .edit-btn:active { opacity:1; color:var(--gold); }
+  .card-actions { display:flex; gap:2px; position:absolute; top:8px; right:10px; }
   .meter-readings { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
   .meter-cell { background:rgba(0,0,0,.2); border-radius:8px; padding:8px 10px; }
   .meter-cell-label { font-size:8px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold-dim); margin-bottom:2px; }
   .meter-cell-val { font-family:'DM Mono',monospace; font-size:13px; color:var(--muted); }
+
+  /* PAGINATION */
+  .pagination-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:16px 0 8px; }
+  .pg-info { font-size:11px; color:var(--muted); display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .pg-size-sel { background:rgba(0,0,0,.35); border:1px solid var(--card-border); border-radius:6px; color:var(--gold-light); padding:4px 8px; font-size:11px; font-family:'DM Mono',monospace; outline:none; cursor:pointer; -webkit-appearance:none; appearance:none; }
+  .pg-controls { display:flex; gap:5px; flex-wrap:wrap; }
+  .pg-btn { background:rgba(0,0,0,.25); border:1px solid var(--card-border); border-radius:7px; color:var(--muted); padding:6px 11px; font-size:12px; font-family:'DM Mono',monospace; cursor:pointer; transition:all .15s; line-height:1; }
+  .pg-btn:disabled { opacity:.3; cursor:default; }
+  .pg-btn.active { background:rgba(200,168,75,.18); border-color:var(--gold); color:var(--gold-light); font-weight:500; }
+  .pg-btn:not(:disabled):not(.active):active { background:rgba(200,168,75,.08); color:var(--gold-dim); }
 
   /* SYNC TAB */
   .sync-card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
@@ -253,7 +269,7 @@
   /* MODAL */
   .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:100; display:none; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px); }
   .modal-overlay.show { display:flex; }
-  .modal { background:#111e14; border:1px solid var(--card-border); border-radius:20px 20px 0 0; width:100%; max-width:480px; padding:24px 20px 40px; max-height:85vh; overflow-y:auto; animation:slideUp .25s ease; }
+  .modal { background:#111e14; border:1px solid var(--card-border); border-radius:20px 20px 0 0; width:100%; max-width:480px; padding:24px 20px 40px; max-height:90vh; overflow-y:auto; animation:slideUp .25s ease; }
   @keyframes slideUp { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
   .modal-handle { width:40px; height:4px; background:var(--gold-dim); border-radius:4px; margin:0 auto 20px; }
   .modal-title { font-family:'Playfair Display',serif; font-size:20px; color:var(--gold-light); margin-bottom:20px; }
@@ -285,6 +301,9 @@
   .toast.success { background:var(--gold); color:#0a1a0f; }
   .toast.error   { background:var(--red-chip); color:#fff; }
   .toast.info    { background:var(--blue); color:#fff; }
+
+  /* EDIT ENTRY MODAL FIELD SIZES */
+  .modal .field-row input[type="number"] { font-size:15px; padding:11px 12px; }
 
   ::-webkit-scrollbar { width:3px; }
   ::-webkit-scrollbar-track { background:transparent; }
@@ -395,7 +414,7 @@
   <div id="tab-entry" class="section">
     <div class="form-card">
       <div class="form-title" id="entry-form-title">Record Week</div>
-      <div class="form-subtitle">Last week's readings are pre-filled — just enter this week's figures</div>
+      <div class="form-subtitle" id="entry-form-subtitle">Last week's readings are pre-filled — just enter this week's figures</div>
       <div class="field-group">
         <span class="field-label">📅 Week Ending Date</span>
         <input type="date" id="entry-date">
@@ -403,15 +422,30 @@
       <div class="field-group">
         <span class="field-label">📥 Meter IN</span>
         <div class="field-row">
-          <div><div class="field-sub">Last Week 🔒</div><input type="number" id="in-last" placeholder="0" readonly></div>
-          <div><div class="field-sub">This Week</div><input type="number" id="in-this" placeholder="Enter reading" oninput="calcPreview()"></div>
+          <div>
+            <div class="field-sub">
+              Last Week
+              <button id="unlock-btn" class="unlock-btn" onclick="toggleLastWeekOverride()" title="Override auto-fill">🔓 Override</button>
+            </div>
+            <input type="number" id="in-last" placeholder="—" readonly oninput="calcPreview()">
+          </div>
+          <div>
+            <div class="field-sub">This Week</div>
+            <input type="number" id="in-this" placeholder="Enter reading" oninput="calcPreview()">
+          </div>
         </div>
       </div>
       <div class="field-group">
         <span class="field-label">📤 Meter OUT</span>
         <div class="field-row">
-          <div><div class="field-sub">Last Week 🔒</div><input type="number" id="out-last" placeholder="0" readonly></div>
-          <div><div class="field-sub">This Week</div><input type="number" id="out-this" placeholder="Enter reading" oninput="calcPreview()"></div>
+          <div>
+            <div class="field-sub">Last Week</div>
+            <input type="number" id="out-last" placeholder="—" readonly oninput="calcPreview()">
+          </div>
+          <div>
+            <div class="field-sub">This Week</div>
+            <input type="number" id="out-this" placeholder="Enter reading" oninput="calcPreview()">
+          </div>
         </div>
       </div>
       <div id="preview" class="preview-box">
@@ -441,6 +475,7 @@
       <div id="chart-scroll-hint" class="chart-scroll-hint">← scroll to see more →</div>
     </div>
     <div id="history-list" class="history-list"></div>
+    <div id="history-pagination"></div>
     <div id="clear-all-wrap" style="display:none;margin-top:16px;">
       <button class="btn btn-danger" onclick="confirmClearAll()">Clear All Local Data for This Box</button>
     </div>
@@ -556,6 +591,40 @@
   </div>
 </div>
 
+<!-- EDIT ENTRY MODAL -->
+<div class="modal-overlay" id="edit-entry-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Edit Entry</div>
+    <div class="field-group">
+      <span class="field-label">📅 Week Ending Date</span>
+      <input type="date" id="edit-entry-date">
+    </div>
+    <div class="field-group">
+      <span class="field-label">📥 Meter IN</span>
+      <div class="field-row">
+        <div><div class="field-sub">Last Week</div><input type="number" id="edit-in-last" placeholder="0" oninput="calcEditPreview()"></div>
+        <div><div class="field-sub">This Week</div><input type="number" id="edit-in-this" placeholder="0" oninput="calcEditPreview()"></div>
+      </div>
+    </div>
+    <div class="field-group">
+      <span class="field-label">📤 Meter OUT</span>
+      <div class="field-row">
+        <div><div class="field-sub">Last Week</div><input type="number" id="edit-out-last" placeholder="0" oninput="calcEditPreview()"></div>
+        <div><div class="field-sub">This Week</div><input type="number" id="edit-out-this" placeholder="0" oninput="calcEditPreview()"></div>
+      </div>
+    </div>
+    <div id="edit-preview" class="preview-box" style="margin-bottom:16px;">
+      <div class="preview-row"><span class="preview-key">Money In</span><span id="edit-prev-in" class="preview-val" style="color:var(--blue)">$0</span></div>
+      <div class="preview-row"><span class="preview-key">Money Out</span><span id="edit-prev-out" class="preview-val" style="color:var(--red-chip)">$0</span></div>
+      <hr class="preview-divider">
+      <div class="preview-profit"><span class="preview-profit-label">Week Profit</span><span id="edit-prev-profit" class="preview-profit-val">$0</span></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveEditEntry()">Save Changes</button>
+    <button class="btn btn-danger" onclick="closeEditEntryModal()">Cancel</button>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <script>
@@ -574,7 +643,6 @@ let deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredInstallPrompt = e;
-  // Only show if not already installed
   if (!window.matchMedia('(display-mode: standalone)').matches) {
     document.getElementById('install-banner').classList.add('visible');
   }
@@ -632,7 +700,7 @@ function updateOnlineStatus() {
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 
-// ─── EXPORT / IMPORT (for phone transfer) ─────────────────
+// ─── EXPORT / IMPORT ──────────────────────────────────────
 function exportData() {
   const payload = {
     version: 'v4',
@@ -660,7 +728,6 @@ function importData(event) {
       if (!payload.boxes || !Array.isArray(payload.boxes)) throw new Error('Invalid file');
       if (!confirm(`Import ${payload.boxes.length} box(es) from ${payload.exportedAt?.slice(0,10) || 'backup'}?\n\nThis will MERGE with your existing data.`)) return;
 
-      // Merge: add boxes not present locally, merge entries
       payload.boxes.forEach(importedBox => {
         let local = getBox(importedBox.id);
         if (!local) {
@@ -673,9 +740,7 @@ function importData(event) {
         }
       });
 
-      if (payload.scriptUrl && !scriptUrl) {
-        scriptUrl = payload.scriptUrl;
-      }
+      if (payload.scriptUrl && !scriptUrl) scriptUrl = payload.scriptUrl;
 
       persist();
       renderBoxSelector();
@@ -694,16 +759,27 @@ function importData(event) {
 const BOX_COLORS = ['#c8a84b','#00ff88','#4da6ff','#d63031','#bf7fff','#ff9f43','#fd79a8','#00cec9'];
 
 // ─── STATE ─────────────────────────────────────────────────
-let boxes        = [];
-let activeBoxId  = null;
-let scriptUrl    = '';
-let lastSync     = null;
-let modalEditId  = null;
-let selectedColor = BOX_COLORS[0];
+let boxes          = [];
+let activeBoxId    = null;
+let scriptUrl      = '';
+let lastSync       = null;
+let modalEditId    = null;
+let selectedColor  = BOX_COLORS[0];
+let lastWeekOverride = false;
+let historyPage    = 1;
+let historyPageSize = 10;
+let editEntryId    = null;
 
 // ─── HELPERS ───────────────────────────────────────────────
 const getBox    = id => boxes.find(b => b.id === id);
 const activeBox = ()  => getBox(activeBoxId);
+
+/** Deterministic color for a box ID — ensures same box gets same color on any device */
+function boxColorFromId(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffff;
+  return BOX_COLORS[h % BOX_COLORS.length];
+}
 
 // ─── INIT ──────────────────────────────────────────────────
 function init() {
@@ -751,6 +827,7 @@ function renderBoxSelector() {
 
 function switchBox(id) {
   activeBoxId = id;
+  historyPage = 1;
   persist();
   renderAll();
   prefillLastWeek();
@@ -770,7 +847,7 @@ function calc(inLast, inThis, outLast, outThis, mult) {
   return { moneyIn, moneyOut, profit: moneyIn - moneyOut };
 }
 
-// ─── PREVIEW ───────────────────────────────────────────────
+// ─── PREVIEW (new entry) ───────────────────────────────────
 function calcPreview() {
   const inLast  = parseFloat(document.getElementById('in-last').value)  || 0;
   const inThis  = parseFloat(document.getElementById('in-this').value)  || 0;
@@ -788,23 +865,100 @@ function calcPreview() {
   pp.className   = 'preview-profit-val ' + (profit > 0 ? 'pos' : profit < 0 ? 'neg' : 'neu');
 }
 
-// ─── AUTOFILL LAST WEEK ────────────────────────────────────
+// ─── PREVIEW (edit entry) ─────────────────────────────────
+function calcEditPreview() {
+  const inLast  = parseFloat(document.getElementById('edit-in-last').value)  || 0;
+  const inThis  = parseFloat(document.getElementById('edit-in-this').value)  || 0;
+  const outLast = parseFloat(document.getElementById('edit-out-last').value) || 0;
+  const outThis = parseFloat(document.getElementById('edit-out-this').value) || 0;
+  const box = activeBox();
+  const mult = box?.multiplier || 50;
+  const { moneyIn, moneyOut, profit } = calc(inLast, inThis, outLast, outThis, mult);
+  document.getElementById('edit-prev-in').textContent  = fmt(moneyIn);
+  document.getElementById('edit-prev-out').textContent = fmt(moneyOut);
+  document.getElementById('edit-preview').classList.add('show');
+  const pp = document.getElementById('edit-prev-profit');
+  pp.textContent = fmt(profit);
+  pp.className   = 'preview-profit-val ' + (profit > 0 ? 'pos' : profit < 0 ? 'neg' : 'neu');
+}
+
+// ─── OVERRIDE TOGGLE ──────────────────────────────────────
+function toggleLastWeekOverride() {
+  const box = activeBox();
+  const inEl  = document.getElementById('in-last');
+  const outEl = document.getElementById('out-last');
+
+  if (lastWeekOverride && box?.entries?.length > 0) {
+    // Lock back — restore auto-fill values
+    lastWeekOverride = false;
+    inEl.setAttribute('readonly', '');
+    outEl.setAttribute('readonly', '');
+    inEl.value  = box.entries[0].inThis;
+    outEl.value = box.entries[0].outThis;
+  } else {
+    // Unlock
+    lastWeekOverride = true;
+    inEl.removeAttribute('readonly');
+    outEl.removeAttribute('readonly');
+    inEl.focus();
+  }
+  updateUnlockBtn();
+  calcPreview();
+}
+
+function updateUnlockBtn() {
+  const btn = document.getElementById('unlock-btn');
+  if (!btn) return;
+  const box = activeBox();
+  const isFirst = !box || box.entries.length === 0;
+  if (isFirst) {
+    btn.textContent = '✎ First Entry';
+    btn.classList.add('active');
+  } else if (lastWeekOverride) {
+    btn.textContent = '🔒 Lock';
+    btn.classList.add('active');
+  } else {
+    btn.textContent = '🔓 Override';
+    btn.classList.remove('active');
+  }
+}
+
+// ─── AUTOFILL LAST WEEK ───────────────────────────────────
 function prefillLastWeek() {
   const box   = activeBox();
   const inEl  = document.getElementById('in-last');
   const outEl = document.getElementById('out-last');
-  if (box?.entries?.length > 0) {
-    const prev = box.entries[0];
-    inEl.value  = prev.inThis;
-    outEl.value = prev.outThis;
-  } else {
+  if (!inEl || !outEl) return;
+
+  const isFirst = !box || box.entries.length === 0;
+
+  if (isFirst) {
+    // No prior entries — auto-unlock so user can enter initial reading
+    lastWeekOverride = true;
+    inEl.removeAttribute('readonly');
+    outEl.removeAttribute('readonly');
     inEl.value  = '';
     outEl.value = '';
+    // Update subtitle to guide user
+    const sub = document.getElementById('entry-form-subtitle');
+    if (sub) sub.textContent = 'First entry — enter last week\'s readings manually, then this week\'s figures';
+  } else {
+    const sub = document.getElementById('entry-form-subtitle');
+    if (sub) sub.textContent = 'Last week\'s readings are pre-filled — just enter this week\'s figures';
+    if (!lastWeekOverride) {
+      inEl.setAttribute('readonly', '');
+      outEl.setAttribute('readonly', '');
+      const prev = box.entries[0];
+      inEl.value  = prev.inThis;
+      outEl.value = prev.outThis;
+    }
   }
+
+  updateUnlockBtn();
   calcPreview();
 }
 
-// ─── SAVE ENTRY ────────────────────────────────────────────
+// ─── SAVE ENTRY ───────────────────────────────────────────
 function saveEntry() {
   const box = activeBox(); if (!box) return;
   const date    = document.getElementById('entry-date').value;
@@ -815,13 +969,18 @@ function saveEntry() {
 
   if (!date) { toast('Select a date', 'error'); return; }
   if (isNaN(inThis) || isNaN(outThis)) { toast('Enter this week\'s readings', 'error'); return; }
-  if (isNaN(inLast) || isNaN(outLast)) { toast('Last week readings missing — enter manually for first entry', 'error'); return; }
+  if (isNaN(inLast) || isNaN(outLast)) { toast('Enter last week\'s readings', 'error'); return; }
 
   const { moneyIn, moneyOut, profit } = calc(inLast, inThis, outLast, outThis, box.multiplier);
-  const entry = { id: Date.now(), date, inLast, inThis, outLast, outThis, moneyIn, moneyOut, profit, multiplier: box.multiplier, boxId: box.id, boxName: box.name };
+  const entry = {
+    id: Date.now(), date, inLast, inThis, outLast, outThis,
+    moneyIn, moneyOut, profit, multiplier: box.multiplier,
+    boxId: box.id, boxName: box.name, boxColor: box.color  // ← boxColor for cross-device sync
+  };
 
   box.entries.unshift(entry);
   persist();
+  lastWeekOverride = false; // reset override after saving
   clearForm();
   renderAll();
   toast('Saved for ' + box.name, 'success');
@@ -835,15 +994,17 @@ function clearForm() {
   document.getElementById('out-this').value = '';
   document.getElementById('preview').classList.remove('show');
   document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+  lastWeekOverride = false;
   prefillLastWeek();
 }
 
-// ─── DELETE ENTRY ──────────────────────────────────────────
+// ─── DELETE ENTRY ─────────────────────────────────────────
 function deleteEntry(id) {
   if (!confirm('Delete this entry?')) return;
   const box = activeBox();
   box.entries = box.entries.filter(e => e.id !== id);
   persist();
+  historyPage = 1;
   renderAll();
   prefillLastWeek();
   toast('Deleted', 'info');
@@ -855,13 +1016,67 @@ function confirmClearAll() {
   if (!confirm('Delete ALL entries for ' + box.name + '?')) return;
   box.entries = [];
   persist();
+  historyPage = 1;
   renderAll();
   prefillLastWeek();
   toast('Cleared', 'info');
   if (scriptUrl && navigator.onLine) setTimeout(() => syncBoxToSheet(box, true), 400);
 }
 
-// ─── ADD / EDIT BOX MODAL ──────────────────────────────────
+// ─── EDIT ENTRY MODAL ─────────────────────────────────────
+function openEditEntryModal(id) {
+  const box = activeBox();
+  const entry = box?.entries.find(e => e.id === id);
+  if (!entry) return;
+  editEntryId = id;
+  document.getElementById('edit-entry-date').value  = entry.date;
+  document.getElementById('edit-in-last').value     = entry.inLast;
+  document.getElementById('edit-in-this').value     = entry.inThis;
+  document.getElementById('edit-out-last').value    = entry.outLast;
+  document.getElementById('edit-out-this').value    = entry.outThis;
+  calcEditPreview();
+  document.getElementById('edit-entry-modal').classList.add('show');
+}
+
+function closeEditEntryModal() {
+  document.getElementById('edit-entry-modal').classList.remove('show');
+  editEntryId = null;
+}
+
+function saveEditEntry() {
+  const box = activeBox();
+  const entry = box?.entries.find(e => e.id === editEntryId);
+  if (!entry) { toast('Entry not found', 'error'); return; }
+
+  const date    = document.getElementById('edit-entry-date').value;
+  const inLast  = parseFloat(document.getElementById('edit-in-last').value);
+  const inThis  = parseFloat(document.getElementById('edit-in-this').value);
+  const outLast = parseFloat(document.getElementById('edit-out-last').value);
+  const outThis = parseFloat(document.getElementById('edit-out-this').value);
+
+  if (!date || isNaN(inLast) || isNaN(inThis) || isNaN(outLast) || isNaN(outThis)) {
+    toast('Fill in all fields', 'error'); return;
+  }
+
+  const { moneyIn, moneyOut, profit } = calc(inLast, inThis, outLast, outThis, box.multiplier);
+  Object.assign(entry, { date, inLast, inThis, outLast, outThis, moneyIn, moneyOut, profit,
+    boxColor: box.color // keep syncing color
+  });
+
+  box.entries.sort((a,b) => new Date(b.date)-new Date(a.date)||b.id-a.id);
+  persist();
+  renderAll();
+  prefillLastWeek();
+  closeEditEntryModal();
+  toast('Entry updated ✓', 'success');
+  if (scriptUrl && navigator.onLine) setTimeout(() => syncBoxToSheet(box, true), 400);
+}
+
+document.getElementById('edit-entry-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditEntryModal();
+});
+
+// ─── ADD / EDIT BOX MODAL ─────────────────────────────────
 function openAddBoxModal() {
   modalEditId    = null;
   selectedColor  = BOX_COLORS[boxes.length % BOX_COLORS.length];
@@ -902,7 +1117,9 @@ function saveBoxModal() {
 
   if (modalEditId) {
     const box = getBox(modalEditId);
-    box.name  = name; box.color = selectedColor; box.multiplier = mult;
+    box.name = name; box.color = selectedColor; box.multiplier = mult;
+    // Update color in existing entries so sync picks up the latest color
+    box.entries.forEach(e => { e.boxColor = selectedColor; e.boxName = name; });
   } else {
     const nb = newBoxObj(name, selectedColor, mult);
     boxes.push(nb);
@@ -917,9 +1134,10 @@ function saveBoxModal() {
   updateEntryTitle();
   closeModal();
   toast(modalEditId ? 'Box updated' : name + ' added!', 'success');
+  if (scriptUrl && navigator.onLine) setTimeout(() => pushAllToSheet(true), 600);
 }
 
-// ─── MANAGE MODAL ──────────────────────────────────────────
+// ─── MANAGE MODAL ─────────────────────────────────────────
 function openManageModal() { renderManageList(); document.getElementById('manage-modal').classList.add('show'); }
 function closeManageModal() { document.getElementById('manage-modal').classList.remove('show'); }
 
@@ -941,6 +1159,7 @@ function renderManageList() {
 function selectBoxFromManage(id) {
   closeManageModal();
   activeBoxId = id;
+  historyPage = 1;
   document.getElementById('box-select').value = id;
   renderAll(); prefillLastWeek(); updateEntryTitle();
   persist();
@@ -957,7 +1176,7 @@ function confirmDeleteBox(id) {
   toast(box.name + ' deleted', 'info');
 }
 
-// ─── SYNC — SHARED SHEET ───────────────────────────────────
+// ─── SYNC — SHARED SHEET ──────────────────────────────────
 async function connectSheet() {
   const url = document.getElementById('script-url-input').value.trim();
   if (!url.startsWith('https://script.google.com')) { toast('Invalid URL', 'error'); return; }
@@ -994,6 +1213,7 @@ async function pullFromSheet(silent = false) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
 
+    // ── Group flat entries by boxId ────────────────────────
     const byBox = {};
     (data.entries || []).forEach(e => {
       const bid = e.boxId;
@@ -1004,17 +1224,35 @@ async function pullFromSheet(silent = false) {
         outLast: Number(e.outLast), outThis: Number(e.outThis),
         moneyIn: Number(e.moneyIn), moneyOut: Number(e.moneyOut),
         profit: Number(e.profit), multiplier: Number(e.multiplier),
-        boxId: bid, boxName: e.boxName
+        boxId: bid, boxName: e.boxName,
+        boxColor: e.boxColor || null  // carry colour from sheet entries
       });
     });
 
     Object.entries(byBox).forEach(([bid, sheetBox]) => {
       let localBox = getBox(bid);
+
       if (!localBox) {
-        localBox = newBoxObj(sheetBox.name, BOX_COLORS[boxes.length % BOX_COLORS.length], 50);
+        // ── New box not seen locally — reconstruct metadata from entries ──
+        const firstEntry = sheetBox.entries[0];
+        const color = firstEntry?.boxColor || boxColorFromId(bid);
+        const mult  = firstEntry?.multiplier || 50;
+        localBox = newBoxObj(sheetBox.name, color, mult);
         localBox.id = bid;
         boxes.push(localBox);
+      } else {
+        // ── Update name if renamed on another device ──
+        if (sheetBox.name && localBox.name !== sheetBox.name) {
+          localBox.name = sheetBox.name;
+        }
+        // ── Update color if a new entry has a different boxColor ──
+        const latestColor = sheetBox.entries.find(e => e.boxColor)?.boxColor;
+        if (latestColor && localBox.color !== latestColor) {
+          localBox.color = latestColor;
+        }
       }
+
+      // ── Merge entries: sheet wins, keep local-only additions ──
       const sheetIds  = new Set(sheetBox.entries.map(e => e.id));
       const localOnly = localBox.entries.filter(e => !sheetIds.has(e.id));
       localBox.entries = [...sheetBox.entries, ...localOnly];
@@ -1031,7 +1269,7 @@ async function pullFromSheet(silent = false) {
     if (!silent) toast('Pulled all boxes ✓', 'success');
   } catch(e) {
     setSyncState('error', 'Pull failed');
-    if (!silent) toast('Pull failed', 'error');
+    if (!silent) toast('Pull failed: ' + e.message, 'error');
   }
 }
 
@@ -1040,7 +1278,7 @@ async function pushAllToSheet(silent = false) {
   if (!navigator.onLine) { if (!silent) toast('Offline — cannot push', 'error'); return; }
   setSyncState('syncing', 'Pushing all boxes…');
   try {
-    const payload = boxes.map(b => ({ id: b.id, name: b.name, entries: b.entries }));
+    const payload = boxes.map(b => ({ id: b.id, name: b.name, color: b.color, multiplier: b.multiplier, entries: b.entries }));
     const res  = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'syncAll', boxes: payload }) });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
@@ -1059,7 +1297,7 @@ async function syncBoxToSheet(box, silent = false) {
   if (!scriptUrl || !box || !navigator.onLine) return;
   setSyncState('syncing', 'Syncing ' + box.name + '…');
   try {
-    const res  = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'syncBox', boxId: box.id, boxName: box.name, entries: box.entries }) });
+    const res  = await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'syncBox', boxId: box.id, boxName: box.name, boxColor: box.color, multiplier: box.multiplier, entries: box.entries }) });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
     lastSync = new Date(); persist();
@@ -1086,9 +1324,10 @@ async function manualSync() {
   await pullFromSheet();
 }
 
-// ─── SYNC UI ───────────────────────────────────────────────
+// ─── SYNC UI ──────────────────────────────────────────────
 function setSyncState(state, label) {
-  document.getElementById('sync-dot').className   = 'sync-dot' + (state==='connected'?' connected':state==='syncing'?' syncing':state==='error'?' error':'');
+  document.getElementById('sync-dot').className = 'sync-dot' +
+    (state==='connected'?' connected':state==='syncing'?' syncing':state==='error'?' error':'');
   document.getElementById('sync-status-text').textContent = label;
 }
 
@@ -1128,7 +1367,7 @@ function setBoxMultiplier(id, v) {
   toast(box.name + ' multiplier set to ×' + box.multiplier, 'success');
 }
 
-// ─── RENDER ────────────────────────────────────────────────
+// ─── RENDER ───────────────────────────────────────────────
 function renderAll() { renderDashboard(); renderHistory(); updateEntryTitle(); }
 
 function renderDashboard() {
@@ -1171,26 +1410,161 @@ function renderDashboard() {
   else { ne.style.display='none'; lw.innerHTML=weekCardHTML(entries[0],false); }
 }
 
+// ─── HISTORY WITH PAGINATION ─────────────────────────────
 function renderHistory() {
-  const box     = activeBox();
-  const entries = box?.entries || [];
-  const list    = document.getElementById('history-list');
-  const cw      = document.getElementById('clear-all-wrap');
-  const chartCard = document.getElementById('chart-card');
+  const box        = activeBox();
+  const allEntries = box?.entries || [];
+  const list       = document.getElementById('history-list');
+  const cw         = document.getElementById('clear-all-wrap');
+  const chartCard  = document.getElementById('chart-card');
+  const pgEl       = document.getElementById('history-pagination');
 
-  if (entries.length === 0) {
-    list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">🃏</div><p>No entries for ${box?.name||'this box'}.</p></div>`;
-    cw.style.display='none';
-    chartCard.style.display='none';
+  if (allEntries.length === 0) {
+    list.innerHTML = `<div class="history-empty"><div class="history-empty-icon">🃏</div><p>No entries for ${box?.name||'this box'}.</p></div>`;
+    cw.style.display    = 'none';
+    chartCard.style.display = 'none';
+    pgEl.innerHTML      = '';
     return;
   }
 
-  cw.style.display='block';
-  chartCard.style.display='block';
-  list.innerHTML = entries.map(e => weekCardHTML(e,true)).join('');
-  renderChart(entries);
+  cw.style.display    = 'block';
+  chartCard.style.display = 'block';
+
+  const totalPages = Math.ceil(allEntries.length / historyPageSize);
+  if (historyPage > totalPages) historyPage = totalPages;
+
+  const start   = (historyPage - 1) * historyPageSize;
+  const pageEntries = allEntries.slice(start, start + historyPageSize);
+
+  list.innerHTML = pageEntries.map(e => weekCardHTML(e, true)).join('');
+  renderPagination(allEntries.length, totalPages);
+  renderChart(allEntries); // chart always uses all data
 }
 
+function renderPagination(total, totalPages) {
+  const pgEl = document.getElementById('history-pagination');
+  if (totalPages <= 1 && total <= 5) { pgEl.innerHTML = ''; return; }
+
+  const start = (historyPage - 1) * historyPageSize + 1;
+  const end   = Math.min(historyPage * historyPageSize, total);
+
+  let html = `<div class="pagination-bar">
+    <div class="pg-info">
+      <span>${start}–${end} of ${total}</span>
+      <span style="color:rgba(138,158,143,.4)">|</span>
+      <span>Show</span>
+      <select class="pg-size-sel" onchange="setHistoryPageSize(+this.value)">
+        <option value="5"  ${historyPageSize===5?'selected':''}>5</option>
+        <option value="10" ${historyPageSize===10?'selected':''}>10</option>
+      </select>
+    </div>
+    <div class="pg-controls">
+      <button class="pg-btn" onclick="setHistoryPage(${historyPage-1})" ${historyPage===1?'disabled':''}>‹ Prev</button>`;
+
+  // Show page numbers, collapse if too many
+  const SHOW = 5;
+  let pages = [];
+  if (totalPages <= SHOW + 2) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages = [1];
+    let lo = Math.max(2, historyPage - 1), hi = Math.min(totalPages - 1, historyPage + 1);
+    if (lo > 2) pages.push('…');
+    for (let i = lo; i <= hi; i++) pages.push(i);
+    if (hi < totalPages - 1) pages.push('…');
+    pages.push(totalPages);
+  }
+
+  pages.forEach(p => {
+    if (p === '…') {
+      html += `<span style="color:var(--muted);padding:0 4px;font-size:12px;line-height:32px;">…</span>`;
+    } else {
+      html += `<button class="pg-btn ${p===historyPage?'active':''}" onclick="setHistoryPage(${p})">${p}</button>`;
+    }
+  });
+
+  html += `<button class="pg-btn" onclick="setHistoryPage(${historyPage+1})" ${historyPage===totalPages?'disabled':''}>Next ›</button>
+    </div>
+  </div>`;
+  pgEl.innerHTML = html;
+}
+
+function setHistoryPage(p) {
+  const box = activeBox();
+  const total = box?.entries?.length || 0;
+  const maxP  = Math.ceil(total / historyPageSize);
+  if (p < 1 || p > maxP) return;
+  historyPage = p;
+  renderHistory();
+  // Scroll history tab to top of list
+  document.getElementById('history-list').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setHistoryPageSize(s) {
+  historyPageSize = s;
+  historyPage = 1;
+  renderHistory();
+}
+
+// ─── TABS ─────────────────────────────────────────────────
+function switchTab(name) {
+  const names = ['dashboard','entry','history','sync'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', names[i]===name));
+  document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id==='tab-'+name));
+  if (name==='entry')   prefillLastWeek();
+  if (name==='sync')    { updateSyncUI(); }
+  if (name==='history') {
+    const box = activeBox();
+    if (box?.entries?.length > 0) setTimeout(() => renderChart(box.entries), 50);
+  }
+}
+
+// ─── TOAST ────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ─── UTILS ────────────────────────────────────────────────
+function fmt(n){const a=Math.abs(n);return(n<0?'-':'')+'$'+a.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function fmtDate(s){if(!s)return'';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
+function weekNum(s){const d=new Date(s+'T00:00:00');const st=new Date(d.getFullYear(),0,1);return Math.ceil(((d-st)/86400000+st.getDay()+1)/7);}
+
+// ─── WEEK CARD HTML ───────────────────────────────────────
+function weekCardHTML(e, showActions) {
+  const pc  = e.profit>0?'pos':e.profit<0?'neg':'neu';
+  const actions = showActions
+    ? `<div class="card-actions">
+         <button class="edit-btn" onclick="openEditEntryModal(${e.id})" title="Edit entry">✏️</button>
+         <button class="delete-btn" onclick="deleteEntry(${e.id})" title="Delete entry">✕</button>
+       </div>`
+    : '';
+  return `<div class="week-card">${actions}
+    <div class="week-card-header">
+      <span class="week-badge">Wk ${weekNum(e.date)}</span>
+      <span class="week-date">${fmtDate(e.date)}</span>
+    </div>
+    <div class="week-body">
+      <div class="meter-readings">
+        <div class="meter-cell"><div class="meter-cell-label">IN — Last</div><div class="meter-cell-val">${e.inLast.toLocaleString()}</div></div>
+        <div class="meter-cell"><div class="meter-cell-label">IN — This</div><div class="meter-cell-val">${e.inThis.toLocaleString()}</div></div>
+        <div class="meter-cell"><div class="meter-cell-label">OUT — Last</div><div class="meter-cell-val">${e.outLast.toLocaleString()}</div></div>
+        <div class="meter-cell"><div class="meter-cell-label">OUT — This</div><div class="meter-cell-val">${e.outThis.toLocaleString()}</div></div>
+      </div>
+      <div class="week-stats">
+        <div class="week-stat"><div class="week-stat-label">Money In</div><div class="week-stat-val" style="color:var(--blue)">${fmt(e.moneyIn)}</div></div>
+        <div class="week-stat"><div class="week-stat-label">Money Out</div><div class="week-stat-val" style="color:var(--red-chip)">${fmt(e.moneyOut)}</div></div>
+        <div class="week-stat"><div class="week-stat-label">× Rate</div><div class="week-stat-val" style="color:var(--muted)">×${e.multiplier}</div></div>
+      </div>
+      <div class="week-profit-row">
+        <span class="week-profit-label">Week Profit</span>
+        <span class="week-profit-val ${pc}">${fmt(e.profit)}</span>
+      </div>
+    </div></div>`;
+}
+
+// ─── CHART ────────────────────────────────────────────────
 function renderChart(entries) {
   const data    = [...entries].reverse();
   const canvas  = document.getElementById('perf-chart');
@@ -1217,8 +1591,8 @@ function renderChart(entries) {
 
   const plotH = chartH - PADDING.top - PADDING.bottom;
 
-  const allVals = data.flatMap(e => [e.moneyIn, e.moneyOut, Math.abs(e.profit)]);
-  const maxVal  = Math.max(...allVals, 1);
+  const allVals   = data.flatMap(e => [e.moneyIn, e.moneyOut, Math.abs(e.profit)]);
+  const maxVal    = Math.max(...allVals, 1);
   const minProfit = Math.min(...data.map(e => e.profit), 0);
   const fullRange = maxVal - minProfit;
 
@@ -1240,9 +1614,9 @@ function renderChart(entries) {
     ctx.setLineDash([]);
   }
 
-  ctx.fillStyle  = 'rgba(138,158,143,0.8)';
-  ctx.font       = `${10 * dpr / dpr}px DM Mono, monospace`;
-  ctx.textAlign  = 'right';
+  ctx.fillStyle    = 'rgba(138,158,143,0.8)';
+  ctx.font         = `${10 * dpr / dpr}px DM Mono, monospace`;
+  ctx.textAlign    = 'right';
   ctx.textBaseline = 'middle';
   for (let i = 0; i <= gridCount; i++) {
     const val = maxVal - (fullRange / gridCount) * i;
@@ -1334,60 +1708,8 @@ function fmtShort(n) {
   return (n < 0 ? '-' : '') + '$' + s;
 }
 
-function weekCardHTML(e, showDelete) {
-  const pc  = e.profit>0?'pos':e.profit<0?'neg':'neu';
-  const del = showDelete?`<button class="delete-btn" onclick="deleteEntry(${e.id})">✕</button>`:'';
-  return `<div class="week-card">${del}
-    <div class="week-card-header">
-      <span class="week-badge">Wk ${weekNum(e.date)}</span>
-      <span class="week-date">${fmtDate(e.date)}</span>
-    </div>
-    <div class="week-body">
-      <div class="meter-readings">
-        <div class="meter-cell"><div class="meter-cell-label">IN — Last</div><div class="meter-cell-val">${e.inLast.toLocaleString()}</div></div>
-        <div class="meter-cell"><div class="meter-cell-label">IN — This</div><div class="meter-cell-val">${e.inThis.toLocaleString()}</div></div>
-        <div class="meter-cell"><div class="meter-cell-label">OUT — Last</div><div class="meter-cell-val">${e.outLast.toLocaleString()}</div></div>
-        <div class="meter-cell"><div class="meter-cell-label">OUT — This</div><div class="meter-cell-val">${e.outThis.toLocaleString()}</div></div>
-      </div>
-      <div class="week-stats">
-        <div class="week-stat"><div class="week-stat-label">Money In</div><div class="week-stat-val" style="color:var(--blue)">${fmt(e.moneyIn)}</div></div>
-        <div class="week-stat"><div class="week-stat-label">Money Out</div><div class="week-stat-val" style="color:var(--red-chip)">${fmt(e.moneyOut)}</div></div>
-        <div class="week-stat"><div class="week-stat-label">× Rate</div><div class="week-stat-val" style="color:var(--muted)">×${e.multiplier}</div></div>
-      </div>
-      <div class="week-profit-row">
-        <span class="week-profit-label">Week Profit</span>
-        <span class="week-profit-val ${pc}">${fmt(e.profit)}</span>
-      </div>
-    </div></div>`;
-}
-
-// ─── TABS ──────────────────────────────────────────────────
-function switchTab(name) {
-  const names = ['dashboard','entry','history','sync'];
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
-  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id==='tab-'+name));
-  if (name==='entry') prefillLastWeek();
-  if (name==='sync')  { updateSyncUI(); }
-  if (name==='history') {
-    const box = activeBox();
-    if (box?.entries?.length > 0) setTimeout(() => renderChart(box.entries), 50);
-  }
-}
-
-// ─── TOAST ─────────────────────────────────────────────────
-function toast(msg, type='success') {
-  const t = document.getElementById('toast');
-  t.textContent=msg; t.className='toast '+type; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
-}
-
-// ─── UTILS ─────────────────────────────────────────────────
-function fmt(n){const a=Math.abs(n);return(n<0?'-':'')+'$'+a.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}
-function fmtDate(s){if(!s)return'';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
-function weekNum(s){const d=new Date(s+'T00:00:00');const st=new Date(d.getFullYear(),0,1);return Math.ceil(((d-st)/86400000+st.getDay()+1)/7);}
-
-document.getElementById('box-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
-document.getElementById('manage-modal').addEventListener('click',function(e){if(e.target===this)closeManageModal();});
+document.getElementById('box-modal').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+document.getElementById('manage-modal').addEventListener('click', function(e) { if(e.target===this) closeManageModal(); });
 
 init();
 </script>
