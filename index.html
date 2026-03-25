@@ -493,6 +493,18 @@
   <!-- SYNC -->
   <div id="tab-sync" class="section">
 
+    <!-- PWA INSTALL DIAGNOSTICS -->
+    <div class="sync-card" id="pwa-diag-card">
+      <h3>📲 Install App — Diagnostics</h3>
+      <p style="margin-bottom:12px;">Tap the button below to see exactly what's blocking or allowing the install prompt.</p>
+      <button class="btn btn-secondary" onclick="runPWADiag()" style="margin-bottom:14px;font-size:11px;padding:10px;">🔍 Run Install Check</button>
+      <div id="pwa-diag-results" style="display:none;">
+        <div id="pwa-diag-list" style="font-size:12px;display:flex;flex-direction:column;gap:7px;margin-bottom:14px;"></div>
+        <div id="pwa-diag-verdict" style="border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6;"></div>
+      </div>
+      <button id="pwa-manual-install-btn" class="btn btn-primary" onclick="installPWA()" style="display:none;margin-top:10px;">⬇ Install App Now</button>
+    </div>
+
     <!-- PHONE TRANSFER CARD -->
     <div class="transfer-card">
       <h3>📱 Transfer to New Phone</h3>
@@ -651,15 +663,15 @@ if ('serviceWorker' in navigator) {
 let deferredInstallPrompt = window._dip || null;
 
 function _tryShowInstallBanner() {
-  // Don't show if already in standalone / already dismissed this session
   if (window.matchMedia('(display-mode: standalone)').matches) return;
-  if (window.navigator.standalone) return;                          // iOS standalone
-  if (sessionStorage.getItem('installDismissed')) return;
+  if (window.navigator.standalone) return;
   if (!deferredInstallPrompt) return;
+  // Show banner AND the in-app manual button (Sync tab)
   document.getElementById('install-banner').classList.add('visible');
+  const mb = document.getElementById('pwa-manual-install-btn');
+  if (mb) mb.style.display = 'block';
 }
 
-// Keep listening — Chrome may fire this again after service-worker updates
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredInstallPrompt = e;
@@ -667,38 +679,132 @@ window.addEventListener('beforeinstallprompt', e => {
   _tryShowInstallBanner();
 });
 
-// Also check on load in case the event already fired before this script ran
 window.addEventListener('load', _tryShowInstallBanner);
 
 window.addEventListener('appinstalled', () => {
   document.getElementById('install-banner').classList.remove('visible');
   deferredInstallPrompt = null;
   window._dip = null;
-  sessionStorage.setItem('installDismissed', 'installed');
+  const mb = document.getElementById('pwa-manual-install-btn');
+  if (mb) mb.style.display = 'none';
   toast('App installed! ♠', 'success');
 });
 
 function installPWA() {
-  if (!deferredInstallPrompt) return;
+  if (!deferredInstallPrompt) { toast('Install prompt not available — see diagnostics', 'error'); return; }
   deferredInstallPrompt.prompt();
   deferredInstallPrompt.userChoice.then(choice => {
     if (choice.outcome === 'accepted') toast('Installing…', 'info');
     deferredInstallPrompt = null;
     window._dip = null;
     document.getElementById('install-banner').classList.remove('visible');
+    const mb = document.getElementById('pwa-manual-install-btn');
+    if (mb) mb.style.display = 'none';
   });
 }
 
 function dismissInstall() {
   document.getElementById('install-banner').classList.remove('visible');
-  // Use localStorage so dismissal persists across sessions (not just this tab)
-  localStorage.setItem('installDismissed', '1');
-  sessionStorage.setItem('installDismissed', '1');
 }
 
-// Re-check dismissal key on load (localStorage version)
-if (localStorage.getItem('installDismissed')) {
-  sessionStorage.setItem('installDismissed', '1');
+// ─── PWA DIAGNOSTICS ──────────────────────────────────────
+async function runPWADiag() {
+  const listEl    = document.getElementById('pwa-diag-list');
+  const verdictEl = document.getElementById('pwa-diag-verdict');
+  const resultsEl = document.getElementById('pwa-diag-results');
+  resultsEl.style.display = 'block';
+  listEl.innerHTML = '<div style="color:var(--muted)">Checking…</div>';
+  verdictEl.innerHTML = '';
+
+  const checks = [];
+
+  // 1. HTTPS / localhost
+  const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  checks.push({ label: 'Served over HTTPS', pass: isSecure,
+    detail: isSecure ? location.origin : 'Currently on ' + location.protocol + ' — must be https://' });
+
+  // 2. Not already standalone
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  checks.push({ label: 'Not already installed', pass: !isStandalone,
+    detail: isStandalone ? 'App is already running in standalone mode' : 'Running in browser — good' });
+
+  // 3. Service worker
+  let swOk = false, swDetail = '';
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.getRegistration('./');
+      swOk = !!reg && (reg.active || reg.installing || reg.waiting);
+      swDetail = swOk ? 'Registered (' + (reg.active ? 'active' : 'installing') + ')' : 'Not yet registered — reload the page';
+    } catch(e) { swDetail = 'Error: ' + e.message; }
+  } else { swDetail = 'Service workers not supported in this browser'; }
+  checks.push({ label: 'Service worker registered', pass: swOk, detail: swDetail });
+
+  // 4. Manifest reachable
+  let mfOk = false, mfDetail = '';
+  try {
+    const r = await fetch('./manifest.json', { cache: 'no-store' });
+    if (r.ok) {
+      const mf = await r.json();
+      mfOk = !!(mf.name && mf.start_url && mf.icons?.length);
+      mfDetail = mfOk ? 'Found: ' + mf.name : 'Missing required fields (name / start_url / icons)';
+    } else { mfDetail = 'HTTP ' + r.status + ' — manifest.json not found'; }
+  } catch(e) { mfDetail = 'Could not fetch manifest.json — ' + e.message; }
+  checks.push({ label: 'manifest.json reachable', pass: mfOk, detail: mfDetail });
+
+  // 5. Icon 192 reachable
+  let ico192 = false, ico192d = '';
+  try {
+    const r = await fetch('./icon-192.png', { cache: 'no-store' });
+    ico192 = r.ok && (r.headers.get('content-type') || '').includes('image');
+    ico192d = ico192 ? 'icon-192.png found ✓' : 'HTTP ' + r.status + ' — file missing from server';
+  } catch(e) { ico192d = 'Could not fetch icon-192.png — ' + e.message; }
+  checks.push({ label: 'icon-192.png reachable', pass: ico192, detail: ico192d });
+
+  // 6. Icon 512 reachable
+  let ico512 = false, ico512d = '';
+  try {
+    const r = await fetch('./icon-512.png', { cache: 'no-store' });
+    ico512 = r.ok && (r.headers.get('content-type') || '').includes('image');
+    ico512d = ico512 ? 'icon-512.png found ✓' : 'HTTP ' + r.status + ' — file missing from server';
+  } catch(e) { ico512d = 'Could not fetch icon-512.png — ' + e.message; }
+  checks.push({ label: 'icon-512.png reachable', pass: ico512, detail: ico512d });
+
+  // 7. Install prompt captured
+  const hasPrompt = !!deferredInstallPrompt;
+  checks.push({ label: 'Install prompt captured', pass: hasPrompt,
+    detail: hasPrompt ? 'Ready — tap the Install button above!' :
+      'Not yet captured. Requires all other checks to pass, then Chrome fires it automatically.' });
+
+  // Render results
+  listEl.innerHTML = checks.map(c => `
+    <div style="display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.2);">
+      <span style="font-size:14px;flex-shrink:0;margin-top:1px;">${c.pass ? '✅' : '❌'}</span>
+      <div>
+        <div style="color:${c.pass ? 'var(--green-neon)' : 'var(--red-chip)'};font-weight:500;">${c.label}</div>
+        <div style="color:var(--muted);font-size:11px;margin-top:2px;">${c.detail}</div>
+      </div>
+    </div>`).join('');
+
+  const allPass = checks.every(c => c.pass);
+  const failures = checks.filter(c => !c.pass);
+
+  if (allPass) {
+    verdictEl.style.background = 'rgba(0,255,136,.07)';
+    verdictEl.style.border = '1px solid rgba(0,255,136,.25)';
+    verdictEl.innerHTML = '<strong style="color:var(--green-neon)">✅ All checks pass!</strong><br>Tap the Install button above.';
+    document.getElementById('pwa-manual-install-btn').style.display = 'block';
+  } else {
+    verdictEl.style.background = 'rgba(214,48,49,.06)';
+    verdictEl.style.border = '1px solid rgba(214,48,49,.25)';
+    const first = failures[0];
+    let fix = '';
+    if (!isSecure)  fix = 'Host this app at an <strong>https://</strong> URL. GitHub Pages, Netlify, and Render all give free HTTPS.';
+    else if (!swOk) fix = 'Reload the page once so the service worker can register, then run this check again.';
+    else if (!mfOk) fix = 'Make sure <strong>manifest.json</strong> is in the same folder as index.html on your server.';
+    else if (!ico192 || !ico512) fix = 'Upload <strong>icon-192.png</strong> and <strong>icon-512.png</strong> to the same folder as index.html on your server.';
+    else fix = 'All files look good — Chrome may need a moment. Reload the page and try again.';
+    verdictEl.innerHTML = '<strong style="color:var(--red-chip)">Fix needed:</strong><br>' + fix;
+  }
 }
 
 // ─── PWA: iOS INSTALL HINT ────────────────────────────────
