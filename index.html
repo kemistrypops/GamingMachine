@@ -13,6 +13,15 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <title>Poker Box Tracker</title>
+<!-- ★ Capture install prompt ASAP — before any other script runs -->
+<script>
+  window._dip = null; // deferred install prompt
+  window.addEventListener('beforeinstallprompt', function earlyCap(e) {
+    e.preventDefault();
+    window._dip = e;
+    // Don't remove listener — Chrome may re-fire after conditions are re-met
+  });
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -638,20 +647,35 @@ if ('serviceWorker' in navigator) {
 }
 
 // ─── PWA: INSTALL PROMPT ──────────────────────────────────
-let deferredInstallPrompt = null;
+// window._dip was set by the early-capture script in <head>
+let deferredInstallPrompt = window._dip || null;
 
+function _tryShowInstallBanner() {
+  // Don't show if already in standalone / already dismissed this session
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  if (window.navigator.standalone) return;                          // iOS standalone
+  if (sessionStorage.getItem('installDismissed')) return;
+  if (!deferredInstallPrompt) return;
+  document.getElementById('install-banner').classList.add('visible');
+}
+
+// Keep listening — Chrome may fire this again after service-worker updates
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredInstallPrompt = e;
-  if (!window.matchMedia('(display-mode: standalone)').matches) {
-    document.getElementById('install-banner').classList.add('visible');
-  }
+  window._dip = e;
+  _tryShowInstallBanner();
 });
+
+// Also check on load in case the event already fired before this script ran
+window.addEventListener('load', _tryShowInstallBanner);
 
 window.addEventListener('appinstalled', () => {
   document.getElementById('install-banner').classList.remove('visible');
-  toast('App installed! ♠', 'success');
   deferredInstallPrompt = null;
+  window._dip = null;
+  sessionStorage.setItem('installDismissed', 'installed');
+  toast('App installed! ♠', 'success');
 });
 
 function installPWA() {
@@ -660,12 +684,20 @@ function installPWA() {
   deferredInstallPrompt.userChoice.then(choice => {
     if (choice.outcome === 'accepted') toast('Installing…', 'info');
     deferredInstallPrompt = null;
+    window._dip = null;
     document.getElementById('install-banner').classList.remove('visible');
   });
 }
 
 function dismissInstall() {
   document.getElementById('install-banner').classList.remove('visible');
+  // Use localStorage so dismissal persists across sessions (not just this tab)
+  localStorage.setItem('installDismissed', '1');
+  sessionStorage.setItem('installDismissed', '1');
+}
+
+// Re-check dismissal key on load (localStorage version)
+if (localStorage.getItem('installDismissed')) {
   sessionStorage.setItem('installDismissed', '1');
 }
 
