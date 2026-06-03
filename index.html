@@ -1666,8 +1666,21 @@ function toast(msg, type='success') {
 
 // ─── UTILS ────────────────────────────────────────────────
 function fmt(n){const a=Math.abs(n);return(n<0?'-':'')+'$'+a.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}
-function fmtDate(s){if(!s)return'';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
-function weekNum(s){const d=new Date(s+'T00:00:00');const st=new Date(d.getFullYear(),0,1);return Math.ceil(((d-st)/86400000+st.getDay()+1)/7);}
+function fmtDate(s){
+  if(!s)return'Unknown Date';
+  const clean=String(s).trim();
+  const d=clean.length===10?new Date(clean+'T00:00:00'):new Date(clean);
+  if(isNaN(d.getTime()))return'Date Error';
+  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+}
+function weekNum(s){
+  if(!s)return'?';
+  const clean=String(s).trim();
+  const d=clean.length===10?new Date(clean+'T00:00:00'):new Date(clean);
+  if(isNaN(d.getTime()))return'?';
+  const st=new Date(d.getFullYear(),0,1);
+  return Math.ceil(((d-st)/86400000+st.getDay()+1)/7);
+}
 
 // ─── WEEK CARD HTML ───────────────────────────────────────
 function weekCardHTML(e, showActions) {
@@ -1787,8 +1800,9 @@ function renderChart(entries) {
     ctx.font         = '9px DM Sans, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
-    const d = new Date(e.date + 'T00:00:00');
-    const label = (d.getMonth()+1) + '/' + d.getDate();
+    const rawD = e.date ? String(e.date).trim() : '';
+    const d = rawD.length===10 ? new Date(rawD+'T00:00:00') : new Date(rawD);
+    const label = !isNaN(d.getTime()) ? (d.getMonth()+1)+'/'+d.getDate() : '?/?';
     ctx.fillText(label, groupX + BAR_W + 2, chartH - PADDING.bottom + 6);
 
     ctx.fillStyle = 'rgba(122,98,40,0.7)';
