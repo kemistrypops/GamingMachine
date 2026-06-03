@@ -2022,10 +2022,10 @@ function generateReport() {
     const earliest = filtered[0];
     const latest   = filtered[filtered.length - 1];
 
-    // Meter delta: latest inThis minus earliest inLast, same for out
-    const inStart  = earliest.inLast;
+    // Meter delta: latest inThis minus earliest inThis (closing readings)
+    const inStart  = earliest.inThis;
     const inEnd    = latest.inThis;
-    const outStart = earliest.outLast;
+    const outStart = earliest.outThis;
     const outEnd   = latest.outThis;
 
     const bIn     = (inEnd  - inStart)  * mult;
