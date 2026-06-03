@@ -1167,7 +1167,7 @@ function openEditEntryModal(id) {
   const entry = box?.entries.find(e => e.id === id);
   if (!entry) return;
   editEntryId = id;
-  document.getElementById('edit-entry-date').value  = entry.date;
+  document.getElementById('edit-entry-date').value  = normalizeDate(entry.date);
   document.getElementById('edit-in-last').value     = entry.inLast;
   document.getElementById('edit-in-this').value     = entry.inThis;
   document.getElementById('edit-out-last').value    = entry.outLast;
@@ -1666,50 +1666,43 @@ function toast(msg, type='success') {
 
 // ─── UTILS ────────────────────────────────────────────────
 function fmt(n){const a=Math.abs(n);return(n<0?'-':'')+'$'+a.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}
-// ─── DATE NORMALIZER ─────────────────────────────────────
-// Converts whatever Google Sheets (or localStorage) gives us into YYYY-MM-DD.
-// Handles: YYYY-MM-DD, M/D/YYYY, D/M/YYYY ambiguous (treated as M/D), Sheets
-// serial numbers (integer days since 1899-12-30), and JS timestamps.
+// ─── DATE NORMALIZER ──────────────────────────────────────
+// Converts any format → YYYY-MM-DD local date string.
+// Handles: full ISO "2026-05-21T05:00:00.000Z", YYYY-MM-DD,
+// M/D/YYYY (Sheets US locale), Sheets serial integers.
 function normalizeDate(raw) {
   if (!raw && raw !== 0) return '';
   const s = String(raw).trim();
   if (!s) return '';
-
+  // Full ISO timestamp — adjust for local timezone (Jamaica = UTC-5)
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0,10);
+    }
+  }
   // Already YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-
-  // M/D/YYYY or MM/DD/YYYY (Google Sheets default US locale export)
+  // M/D/YYYY or MM/DD/YYYY (Sheets US locale)
   const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (slash) {
-    const mm = slash[1].padStart(2,'0');
-    const dd = slash[2].padStart(2,'0');
-    return slash[3] + '-' + mm + '-' + dd;
-  }
-
-  // Pure integer — could be a Sheets serial number (days since 1899-12-30)
-  // Sheets serials are roughly 40000-50000 for years 2009-2036.
-  // JS timestamps in ms would be 13 digits, so we distinguish by magnitude.
+  if (slash) return slash[3]+'-'+slash[1].padStart(2,'0')+'-'+slash[2].padStart(2,'0');
+  // Pure integer: JS ms timestamp or Sheets serial
   if (/^\d+$/.test(s)) {
     const n = Number(s);
-    if (n > 100000000) {
-      // Treat as JS timestamp (ms)
+    if (n > 1000000000000) {
       const d = new Date(n);
-      if (!isNaN(d)) return d.toISOString().slice(0,10);
+      if (!isNaN(d.getTime())) { const l=new Date(d.getTime()-d.getTimezoneOffset()*60000); return l.toISOString().slice(0,10); }
     } else if (n > 1000) {
-      // Treat as Sheets serial: days since Dec 30 1899
-      const epoch = new Date(1899, 11, 30);
-      epoch.setDate(epoch.getDate() + n);
+      const epoch = new Date(1899,11,30); epoch.setDate(epoch.getDate()+n);
       return epoch.toISOString().slice(0,10);
     }
   }
-
-  // Last resort: let the JS engine try, anchored to local midnight
-  const d = new Date(s.length === 10 ? s + 'T00:00:00' : s);
-  if (!isNaN(d.getTime())) return d.toISOString().slice(0,10);
-
-  return ''; // truly unparseable
+  // Last resort
+  const d = new Date(s.length===10 ? s+'T00:00:00' : s);
+  if (!isNaN(d.getTime())) { const l=new Date(d.getTime()-d.getTimezoneOffset()*60000); return l.toISOString().slice(0,10); }
+  return '';
 }
-
 function fmtDate(s) {
   const iso = normalizeDate(s);
   if (!iso) return 'Unknown Date';
