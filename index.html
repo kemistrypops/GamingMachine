@@ -2003,35 +2003,49 @@ function generateReport() {
   const resultsEl = document.getElementById('report-results');
   resultsEl.style.display = 'block';
 
-  let grandIn = 0, grandOut = 0, grandProfit = 0, grandWeeks = 0;
+  let grandIn = 0, grandOut = 0, grandProfit = 0;
   let hasAny = false;
 
   const boxBlocks = boxes.map(box => {
+    // Filter entries in range, sort oldest first
     const filtered = box.entries.filter(e => {
       const iso = normalizeDate(e.date);
       if (!iso) return false;
       const d = new Date(iso + 'T00:00:00');
       return d >= fromD && d <= toD;
-    });
+    }).sort((a,b) => new Date(normalizeDate(a.date)+'T00:00:00') - new Date(normalizeDate(b.date)+'T00:00:00'));
 
     if (filtered.length === 0) return null;
     hasAny = true;
 
-    const bIn     = filtered.reduce((s,e) => s + e.moneyIn,  0);
-    const bOut    = filtered.reduce((s,e) => s + e.moneyOut, 0);
-    const bProfit = filtered.reduce((s,e) => s + e.profit,   0);
+    const mult = box.multiplier || 50;
+    const earliest = filtered[0];
+    const latest   = filtered[filtered.length - 1];
+
+    // Meter delta: latest inThis minus earliest inLast, same for out
+    const inStart  = earliest.inLast;
+    const inEnd    = latest.inThis;
+    const outStart = earliest.outLast;
+    const outEnd   = latest.outThis;
+
+    const bIn     = (inEnd  - inStart)  * mult;
+    const bOut    = (outEnd - outStart) * mult;
+    const bProfit = bIn - bOut;
 
     grandIn     += bIn;
     grandOut    += bOut;
     grandProfit += bProfit;
-    grandWeeks  += filtered.length;
 
     const pc = bProfit >= 0 ? 'var(--green-neon)' : 'var(--red-chip)';
+
     return `
       <div class="report-box-block">
         <div class="report-box-name">
           <div class="report-box-dot" style="background:${box.color}"></div>
           ${box.name}
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace;">
+          ${normalizeDate(earliest.date)} \u2192 ${normalizeDate(latest.date)} \u00b7 \u00d7${mult}
         </div>
         <div class="report-stat-row">
           <div class="report-stat">
@@ -2047,26 +2061,26 @@ function generateReport() {
             <div class="report-stat-val" style="color:${pc}">${fmt(bProfit)}</div>
           </div>
         </div>
-        <div class="report-weeks-note">${filtered.length} week${filtered.length!==1?'s':''} in range</div>
+        <div class="report-weeks-note">${filtered.length} week${filtered.length!==1?'s':''} · meter delta</div>
       </div>`;
   }).filter(Boolean);
 
   if (!hasAny) {
-    resultsEl.innerHTML = `<div class="report-empty">📭 No entries found in this date range.</div>`;
+    resultsEl.innerHTML = `<div class="report-empty">\ud83d\udcad No entries found in this date range.</div>`;
     return;
   }
 
   const gpc = grandProfit >= 0 ? 'var(--green-neon)' : 'var(--red-chip)';
   const isAllTime = fromStr <= '2000-01-02';
-  const periodLabel = isAllTime ? 'All Time' : fromStr + ' → ' + toStr;
+  const periodLabel = isAllTime ? 'All Time' : fromStr + ' \u2192 ' + toStr;
 
   resultsEl.innerHTML = `
-    <div class="report-period-badge">📅 ${periodLabel}</div>
+    <div class="report-period-badge">\ud83d\udcc5 ${periodLabel}</div>
     <div class="report-section-title">Per Box</div>
     ${boxBlocks.join('')}
     ${boxes.length > 1 ? `
     <div class="report-total-block">
-      <div class="report-total-label">♠ All Boxes Combined · ${grandWeeks} week${grandWeeks!==1?'s':''}</div>
+      <div class="report-total-label">\u2660 All Boxes Combined</div>
       <div class="report-total-row">
         <div class="report-total-stat">
           <div class="report-total-stat-label">Total In</div>
@@ -2083,7 +2097,6 @@ function generateReport() {
       </div>
     </div>` : ''}`;
 
-  // Scroll results into view on mobile
   setTimeout(() => resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
 }
 
