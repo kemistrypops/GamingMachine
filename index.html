@@ -317,6 +317,30 @@
   ::-webkit-scrollbar { width:3px; }
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:var(--gold-dim); border-radius:2px; }
+
+  /* ── QUICK REPORT MODAL ── */
+  .report-date-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .report-preset-row { display:flex; gap:7px; margin-bottom:16px; flex-wrap:wrap; }
+  .report-preset-btn { flex:1; min-width:0; background:rgba(0,0,0,.25); border:1px solid var(--card-border); border-radius:8px; color:var(--muted); font-size:10px; font-family:'DM Sans',sans-serif; letter-spacing:1px; text-transform:uppercase; padding:9px 4px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+  .report-preset-btn:active { background:rgba(200,168,75,.12); color:var(--gold); border-color:var(--gold-dim); }
+  .report-section-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gold-dim); margin-bottom:10px; margin-top:4px; }
+  .report-box-block { background:rgba(0,0,0,.2); border:1px solid rgba(200,168,75,.12); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px; }
+  .report-box-name { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:500; color:var(--white); margin-bottom:10px; }
+  .report-box-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .report-stat-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .report-stat { text-align:center; padding:8px 4px; background:rgba(0,0,0,.2); border-radius:8px; }
+  .report-stat-label { font-size:8px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .report-stat-val { font-family:'DM Mono',monospace; font-size:13px; font-weight:500; }
+  .report-weeks-note { font-size:10px; color:var(--muted); margin-top:6px; text-align:right; }
+  .report-total-block { background:linear-gradient(135deg,rgba(200,168,75,.1),rgba(200,168,75,.04)); border:1px solid var(--gold-dim); border-radius:var(--radius-sm); padding:16px; margin-top:4px; }
+  .report-total-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--gold-dim); margin-bottom:10px; }
+  .report-total-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .report-total-stat { text-align:center; }
+  .report-total-stat-label { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .report-total-stat-val { font-family:'DM Mono',monospace; font-size:18px; font-weight:500; }
+  .report-empty { text-align:center; padding:30px 16px; color:var(--muted); font-size:13px; }
+  .report-period-badge { display:inline-block; background:rgba(200,168,75,.1); border:1px solid rgba(200,168,75,.25); border-radius:20px; padding:4px 12px; font-size:11px; color:var(--gold-light); letter-spacing:1px; margin-bottom:14px; font-family:'DM Mono',monospace; }
+  #report-results { max-height:52vh; overflow-y:auto; padding-right:2px; }
 </style>
 </head>
 <body>
@@ -363,6 +387,7 @@
     </div>
     <button class="icon-bar-btn add" onclick="openAddBoxModal()" title="Add box">+</button>
     <button class="icon-bar-btn manage" onclick="openManageModal()" title="Manage boxes">⚙</button>
+    <button class="icon-bar-btn manage" onclick="openReportModal()" title="Quick report" style="color:var(--gold-dim);font-size:15px;">📊</button>
   </div>
 
   <!-- SYNC STATUS -->
@@ -643,6 +668,33 @@
     </div>
     <button class="btn btn-primary" onclick="saveEditEntry()">Save Changes</button>
     <button class="btn btn-danger" onclick="closeEditEntryModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- QUICK REPORT MODAL -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal" style="padding-bottom:32px;">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📊 Quick Report</div>
+    <div class="report-date-row">
+      <div>
+        <span class="field-label">From</span>
+        <input type="date" id="report-from">
+      </div>
+      <div>
+        <span class="field-label">To</span>
+        <input type="date" id="report-to">
+      </div>
+    </div>
+    <div class="report-preset-row">
+      <button class="report-preset-btn" onclick="setReportPreset('week')">This Week</button>
+      <button class="report-preset-btn" onclick="setReportPreset('month')">This Month</button>
+      <button class="report-preset-btn" onclick="setReportPreset('year')">This Year</button>
+      <button class="report-preset-btn" onclick="setReportPreset('all')">All Time</button>
+    </div>
+    <button class="btn btn-primary" onclick="generateReport()" style="margin-bottom:16px;">Generate Report</button>
+    <div id="report-results" style="display:none;"></div>
+    <button class="btn btn-danger" onclick="closeReportModal()" style="margin-top:10px;">Close</button>
   </div>
 </div>
 
@@ -1899,6 +1951,141 @@ function fmtShort(n) {
 
 document.getElementById('box-modal').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
 document.getElementById('manage-modal').addEventListener('click', function(e) { if(e.target===this) closeManageModal(); });
+document.getElementById('report-modal').addEventListener('click', function(e) { if(e.target===this) closeReportModal(); });
+
+// ─── QUICK REPORT ─────────────────────────────────────────
+function openReportModal() {
+  // Default to current month
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  document.getElementById('report-from').value = new Date(y, m, 1).toISOString().slice(0,10);
+  document.getElementById('report-to').value   = new Date(y, m+1, 0).toISOString().slice(0,10);
+  document.getElementById('report-results').style.display = 'none';
+  document.getElementById('report-results').innerHTML = '';
+  document.getElementById('report-modal').classList.add('show');
+}
+
+function closeReportModal() {
+  document.getElementById('report-modal').classList.remove('show');
+}
+
+function setReportPreset(preset) {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  let from, to;
+  if (preset === 'week') {
+    const day = now.getDay(); // 0=Sun
+    from = new Date(now); from.setDate(now.getDate() - day);
+    to   = new Date(now); to.setDate(now.getDate() + (6 - day));
+  } else if (preset === 'month') {
+    from = new Date(y, m, 1);
+    to   = new Date(y, m+1, 0);
+  } else if (preset === 'year') {
+    from = new Date(y, 0, 1);
+    to   = new Date(y, 11, 31);
+  } else { // all
+    from = new Date(2000, 0, 1);
+    to   = new Date(2099, 11, 31);
+  }
+  document.getElementById('report-from').value = from.toISOString().slice(0,10);
+  document.getElementById('report-to').value   = to.toISOString().slice(0,10);
+}
+
+function generateReport() {
+  const fromStr = document.getElementById('report-from').value;
+  const toStr   = document.getElementById('report-to').value;
+  if (!fromStr || !toStr) { toast('Select a date range', 'error'); return; }
+
+  const fromD = new Date(fromStr + 'T00:00:00');
+  const toD   = new Date(toStr   + 'T23:59:59');
+  if (fromD > toD) { toast('From must be before To', 'error'); return; }
+
+  const resultsEl = document.getElementById('report-results');
+  resultsEl.style.display = 'block';
+
+  let grandIn = 0, grandOut = 0, grandProfit = 0, grandWeeks = 0;
+  let hasAny = false;
+
+  const boxBlocks = boxes.map(box => {
+    const filtered = box.entries.filter(e => {
+      const iso = normalizeDate(e.date);
+      if (!iso) return false;
+      const d = new Date(iso + 'T00:00:00');
+      return d >= fromD && d <= toD;
+    });
+
+    if (filtered.length === 0) return null;
+    hasAny = true;
+
+    const bIn     = filtered.reduce((s,e) => s + e.moneyIn,  0);
+    const bOut    = filtered.reduce((s,e) => s + e.moneyOut, 0);
+    const bProfit = filtered.reduce((s,e) => s + e.profit,   0);
+
+    grandIn     += bIn;
+    grandOut    += bOut;
+    grandProfit += bProfit;
+    grandWeeks  += filtered.length;
+
+    const pc = bProfit >= 0 ? 'var(--green-neon)' : 'var(--red-chip)';
+    return `
+      <div class="report-box-block">
+        <div class="report-box-name">
+          <div class="report-box-dot" style="background:${box.color}"></div>
+          ${box.name}
+        </div>
+        <div class="report-stat-row">
+          <div class="report-stat">
+            <div class="report-stat-label">Total In</div>
+            <div class="report-stat-val" style="color:var(--blue)">${fmt(bIn)}</div>
+          </div>
+          <div class="report-stat">
+            <div class="report-stat-label">Total Out</div>
+            <div class="report-stat-val" style="color:var(--red-chip)">${fmt(bOut)}</div>
+          </div>
+          <div class="report-stat">
+            <div class="report-stat-label">Profit</div>
+            <div class="report-stat-val" style="color:${pc}">${fmt(bProfit)}</div>
+          </div>
+        </div>
+        <div class="report-weeks-note">${filtered.length} week${filtered.length!==1?'s':''} in range</div>
+      </div>`;
+  }).filter(Boolean);
+
+  if (!hasAny) {
+    resultsEl.innerHTML = `<div class="report-empty">📭 No entries found in this date range.</div>`;
+    return;
+  }
+
+  const gpc = grandProfit >= 0 ? 'var(--green-neon)' : 'var(--red-chip)';
+  const isAllTime = fromStr <= '2000-01-02';
+  const periodLabel = isAllTime ? 'All Time' : fromStr + ' → ' + toStr;
+
+  resultsEl.innerHTML = `
+    <div class="report-period-badge">📅 ${periodLabel}</div>
+    <div class="report-section-title">Per Box</div>
+    ${boxBlocks.join('')}
+    ${boxes.length > 1 ? `
+    <div class="report-total-block">
+      <div class="report-total-label">♠ All Boxes Combined · ${grandWeeks} week${grandWeeks!==1?'s':''}</div>
+      <div class="report-total-row">
+        <div class="report-total-stat">
+          <div class="report-total-stat-label">Total In</div>
+          <div class="report-total-stat-val" style="color:var(--blue)">${fmt(grandIn)}</div>
+        </div>
+        <div class="report-total-stat">
+          <div class="report-total-stat-label">Total Out</div>
+          <div class="report-total-stat-val" style="color:var(--red-chip)">${fmt(grandOut)}</div>
+        </div>
+        <div class="report-total-stat">
+          <div class="report-total-stat-label">Profit</div>
+          <div class="report-total-stat-val" style="color:${gpc}">${fmt(grandProfit)}</div>
+        </div>
+      </div>
+    </div>` : ''}`;
+
+  // Scroll results into view on mobile
+  setTimeout(() => resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+}
 
 init();
 </script>
