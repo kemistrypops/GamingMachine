@@ -1,10 +1,10 @@
 // ============================================================
-//  Poker Box Tracker — Service Worker  v3
+//  Poker Box Tracker — Service Worker  v4
 //  All 4 files must be in the SAME folder on your web server:
 //    index.html · sw.js · icon-192.png · icon-512.png
 // ============================================================
 
-const CACHE_NAME = 'poker-box-v3';
+const CACHE_NAME = 'poker-box-v4';
 
 const ASSETS = [
   './',
