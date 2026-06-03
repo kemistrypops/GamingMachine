@@ -1357,7 +1357,7 @@ async function pullFromSheet(silent = false) {
       const bid = e.boxId;
       if (!byBox[bid]) byBox[bid] = { name: e.boxName, entries: [] };
       byBox[bid].entries.push({
-        id: Number(e.id), date: String(e.date),
+        id: Number(e.id), date: normalizeDate(e.date),
         inLast: Number(e.inLast), inThis: Number(e.inThis),
         outLast: Number(e.outLast), outThis: Number(e.outThis),
         moneyIn: Number(e.moneyIn), moneyOut: Number(e.moneyOut),
@@ -1394,7 +1394,7 @@ async function pullFromSheet(silent = false) {
       const sheetIds  = new Set(sheetBox.entries.map(e => e.id));
       const localOnly = localBox.entries.filter(e => !sheetIds.has(e.id));
       localBox.entries = [...sheetBox.entries, ...localOnly];
-      localBox.entries.sort((a,b) => new Date(b.date)-new Date(a.date)||b.id-a.id);
+      localBox.entries.sort((a,b) => new Date(normalizeDate(b.date)+'T00:00:00')-new Date(normalizeDate(a.date)+'T00:00:00')||b.id-a.id);
     });
 
     lastSync = new Date();
@@ -1666,19 +1666,63 @@ function toast(msg, type='success') {
 
 // ─── UTILS ────────────────────────────────────────────────
 function fmt(n){const a=Math.abs(n);return(n<0?'-':'')+'$'+a.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}
-function fmtDate(s){
-  if(!s)return'Unknown Date';
-  const clean=String(s).trim();
-  const d=clean.length===10?new Date(clean+'T00:00:00'):new Date(clean);
-  if(isNaN(d.getTime()))return'Date Error';
+// ─── DATE NORMALIZER ─────────────────────────────────────
+// Converts whatever Google Sheets (or localStorage) gives us into YYYY-MM-DD.
+// Handles: YYYY-MM-DD, M/D/YYYY, D/M/YYYY ambiguous (treated as M/D), Sheets
+// serial numbers (integer days since 1899-12-30), and JS timestamps.
+function normalizeDate(raw) {
+  if (!raw && raw !== 0) return '';
+  const s = String(raw).trim();
+  if (!s) return '';
+
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // M/D/YYYY or MM/DD/YYYY (Google Sheets default US locale export)
+  const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slash) {
+    const mm = slash[1].padStart(2,'0');
+    const dd = slash[2].padStart(2,'0');
+    return slash[3] + '-' + mm + '-' + dd;
+  }
+
+  // Pure integer — could be a Sheets serial number (days since 1899-12-30)
+  // Sheets serials are roughly 40000-50000 for years 2009-2036.
+  // JS timestamps in ms would be 13 digits, so we distinguish by magnitude.
+  if (/^\d+$/.test(s)) {
+    const n = Number(s);
+    if (n > 100000000) {
+      // Treat as JS timestamp (ms)
+      const d = new Date(n);
+      if (!isNaN(d)) return d.toISOString().slice(0,10);
+    } else if (n > 1000) {
+      // Treat as Sheets serial: days since Dec 30 1899
+      const epoch = new Date(1899, 11, 30);
+      epoch.setDate(epoch.getDate() + n);
+      return epoch.toISOString().slice(0,10);
+    }
+  }
+
+  // Last resort: let the JS engine try, anchored to local midnight
+  const d = new Date(s.length === 10 ? s + 'T00:00:00' : s);
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0,10);
+
+  return ''; // truly unparseable
+}
+
+function fmtDate(s) {
+  const iso = normalizeDate(s);
+  if (!iso) return 'Unknown Date';
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d.getTime())) return 'Date Error';
   return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 }
-function weekNum(s){
-  if(!s)return'?';
-  const clean=String(s).trim();
-  const d=clean.length===10?new Date(clean+'T00:00:00'):new Date(clean);
-  if(isNaN(d.getTime()))return'?';
-  const st=new Date(d.getFullYear(),0,1);
+function weekNum(s) {
+  const iso = normalizeDate(s);
+  if (!iso) return '?';
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d.getTime())) return '?';
+  const st = new Date(d.getFullYear(),0,1);
   return Math.ceil(((d-st)/86400000+st.getDay()+1)/7);
 }
 
@@ -1800,9 +1844,9 @@ function renderChart(entries) {
     ctx.font         = '9px DM Sans, sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
-    const rawD = e.date ? String(e.date).trim() : '';
-    const d = rawD.length===10 ? new Date(rawD+'T00:00:00') : new Date(rawD);
-    const label = !isNaN(d.getTime()) ? (d.getMonth()+1)+'/'+d.getDate() : '?/?';
+    const _iso = normalizeDate(e.date);
+    const d = _iso ? new Date(_iso + 'T00:00:00') : null;
+    const label = (d && !isNaN(d)) ? (d.getMonth()+1)+'/'+d.getDate() : '?/?';
     ctx.fillText(label, groupX + BAR_W + 2, chartH - PADDING.bottom + 6);
 
     ctx.fillStyle = 'rgba(122,98,40,0.7)';
