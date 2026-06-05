@@ -4,7 +4,7 @@
 //    index.html · sw.js · icon-192.png · icon-512.png
 // ============================================================
 
-const CACHE_NAME = 'poker-box-v5';
+const CACHE_NAME = 'poker-box-v7';
 
 const ASSETS = [
   './',
